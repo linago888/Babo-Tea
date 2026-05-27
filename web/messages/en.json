@@ -1,0 +1,11 @@
+{
+  "site": {
+    "name": "Global Boba Graph",
+    "tagline": "Global bubble tea knowledge & industry media"
+  },
+  "home": {
+    "headline": "A structured data platform for bubble tea brands, cities, drinks and news worldwide.",
+    "lede": "Starting as an SEO content database, growing into a knowledge graph, AI search and industry intelligence product.",
+    "scaffold_note": "Day 1 scaffold complete. Next: model the data-model.md schema and seed a vertical slice."
+  }
+}

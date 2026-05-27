@@ -1,0 +1,26 @@
+// Global Boba Graph — Prisma schema
+//
+// 完整資料模型定義見 ../../data-model.md。
+// Day 1 scaffold 階段：只放 generator / datasource 設定 + 一個健康檢查用 placeholder。
+// Day 3 起依 data-model.md §1-§8 逐步把所有 model 翻譯進來。
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  // 連線字串在 prisma.config.ts（Prisma 7 改動：url / directUrl 不再寫在 schema）
+  // extensions = [pg_trgm, postgis] // Day 5 啟用：地理索引 + 模糊搜尋
+}
+
+// Placeholder：Day 1 連線健康檢查用，Day 3 會被 data-model 取代
+model HealthCheck {
+  id        String   @id @default(uuid()) @db.Uuid
+  note      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("health_check")
+}

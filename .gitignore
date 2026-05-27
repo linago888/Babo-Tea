@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+web/.next/
+web/out/
+web/build/
+web/dist/
+
+# Env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# IDE / OS
+.idea/
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Generated docs (產生器在 build_spec_docx.py，docx 是輸出產物)
+# 註：目前仍保留 docx 在 repo，方便非工程角色檢視；若要排除可取消下行註解
+# Global Boba Graph 網站詳細功能規格書.docx
+
+# Prisma
+web/prisma/migrations/dev_*
+
+# Payload
+web/media/

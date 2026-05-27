@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Global Boba Graph Prototype</title>
+    <meta name="description" content="全球珍珠奶茶知識與產業媒體平台 prototype">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand-mark" href="#overview" aria-label="Global Boba Graph">
+        <span class="brand-dot"></span>
+        <span>
+          <strong>Global Boba Graph</strong>
+          <small>全球珍奶知識與產業媒體</small>
+        </span>
+      </a>
+      <nav class="nav-links" aria-label="主要導覽">
+        <a href="#overview">總覽</a>
+        <a href="#database">資料庫</a>
+        <a href="#graph">知識圖譜</a>
+        <a href="#workflow">工作流</a>
+        <a href="#roadmap">路線圖</a>
+      </nav>
+      <button class="icon-button" id="themeToggle" type="button" aria-label="切換深色模式" title="切換深色模式">
+        <span aria-hidden="true">◐</span>
+      </button>
+    </header>
+
+    <main>
+      <section class="workspace" id="overview">
+        <div class="workspace-main">
+          <p class="eyebrow">MVP Prototype</p>
+          <h1>全球珍珠奶茶品牌、城市、飲品與新聞的結構化資料平台</h1>
+          <p class="lede">以 SEO 內容資料庫起步，逐步擴充成知識圖譜、AI 搜尋與產業情報產品。</p>
+
+          <div class="search-panel" role="search">
+            <label for="searchInput">搜尋資料</label>
+            <div class="search-row">
+              <input id="searchInput" type="search" placeholder="搜尋 Gong Cha、東京、黑糖珍奶、CHAGEE...">
+              <button id="clearSearch" class="secondary-button" type="button">清除</button>
+            </div>
+            <div class="filter-tabs" aria-label="資料類型篩選">
+              <button class="filter-tab active" type="button" data-type="all">全部</button>
+              <button class="filter-tab" type="button" data-type="brand">品牌</button>
+              <button class="filter-tab" type="button" data-type="city">城市</button>
+              <button class="filter-tab" type="button" data-type="drink">飲品</button>
+              <button class="filter-tab" type="button" data-type="news">新聞</button>
+            </div>
+          </div>
+        </div>
+
+        <aside class="insight-panel" aria-label="平台指標">
+          <canvas id="bobaCanvas" width="520" height="280" aria-label="珍奶資料平台視覺"></canvas>
+          <div class="metric-grid">
+            <article>
+              <strong>50</strong>
+              <span>品牌頁 MVP</span>
+            </article>
+            <article>
+              <strong>20</strong>
+              <span>城市指南</span>
+            </article>
+            <article>
+              <strong>100</strong>
+              <span>新聞內容</span>
+            </article>
+            <article>
+              <strong>200+</strong>
+              <span>SEO 頁面</span>
+            </article>
+          </div>
+        </aside>
+      </section>
+
+      <section class="section" id="database">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Structured Database</p>
+            <h2>資料庫功能雛形</h2>
+          </div>
+          <p>品牌、城市、飲品、新聞共用同一套搜尋與關聯邏輯。點選卡片可查看內容結構。</p>
+        </div>
+        <div class="result-status" id="resultStatus" aria-live="polite"></div>
+        <div class="card-grid" id="cardGrid"></div>
+      </section>
+
+      <section class="section split" id="graph">
+        <div>
+          <p class="eyebrow">Knowledge Graph</p>
+          <h2>知識圖譜互動預覽</h2>
+          <p class="section-copy">MVP 階段先用關聯表支撐頁面內鏈。當使用者點選資料卡，圖譜會高亮相關節點，示範未來 AI 搜尋與推薦的資料基礎。</p>
+          <div class="legend">
+            <span><i class="legend-dot brand"></i>品牌</span>
+            <span><i class="legend-dot city"></i>城市</span>
+            <span><i class="legend-dot drink"></i>飲品</span>
+            <span><i class="legend-dot news"></i>新聞</span>
+          </div>
+        </div>
+        <div class="graph-panel" id="graphPanel" aria-label="知識圖譜">
+          <svg viewBox="0 0 760 430" role="img" aria-labelledby="graphTitle">
+            <title id="graphTitle">品牌、城市、飲品、新聞之間的關聯示意</title>
+            <g class="edges"></g>
+            <g class="nodes"></g>
+          </svg>
+        </div>
+      </section>
+
+      <section class="section" id="workflow">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Editorial Workflow</p>
+            <h2>內容與資料發布流程</h2>
+          </div>
+          <p>每篇內容都應產生結構化關聯，避免新聞成為孤立文章。</p>
+        </div>
+        <div class="workflow-grid">
+          <article>
+            <span class="step">01</span>
+            <h3>建立資料實體</h3>
+            <p>新增品牌、城市、飲品或新聞，填入 slug、摘要、SEO 欄位與狀態。</p>
+          </article>
+          <article>
+            <span class="step">02</span>
+            <h3>設定關聯</h3>
+            <p>標記相關品牌、城市、飲品、趨勢與來源，產生內部連結。</p>
+          </article>
+          <article>
+            <span class="step">03</span>
+            <h3>發布與索引</h3>
+            <p>產生 metadata、sitemap、結構化資料，提交 Google Search Console。</p>
+          </article>
+          <article>
+            <span class="step">04</span>
+            <h3>分析與擴充</h3>
+            <p>追蹤搜尋字、熱門頁、關聯點擊，回補品牌與城市資料。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="roadmap">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Roadmap</p>
+            <h2>開發路線圖</h2>
+          </div>
+          <p>先完成 SEO 資料平台，再擴充 AI 與商業化功能。</p>
+        </div>
+        <div class="roadmap">
+          <article>
+            <strong>0-30 天</strong>
+            <h3>MVP 上線</h3>
+            <p>首頁、品牌、城市、飲品、新聞、搜尋、CMS、SEO 基礎。</p>
+          </article>
+          <article>
+            <strong>30-90 天</strong>
+            <h3>成長功能</h3>
+            <p>AI 摘要、進階搜尋、電子報、趨勢分數、城市比較。</p>
+          </article>
+          <article>
+            <strong>3-12 個月</strong>
+            <h3>智慧平台</h3>
+            <p>全球地圖、AI 問答、加盟情報、市場報告、資料 API。</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="detailDialog" class="detail-dialog">
+      <button class="icon-button close-dialog" id="closeDialog" type="button" aria-label="關閉詳情" title="關閉">×</button>
+      <div id="detailContent"></div>
+    </dialog>
+
+    <footer class="footer">
+      <strong>Global Boba Graph</strong>
+      <span>Prototype for MVP planning and product architecture.</span>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
