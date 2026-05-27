@@ -14,6 +14,13 @@ web/dist/
 .env.*.local
 !.env.example
 
+# Secret notes — 任何 *_pw.txt / *_secret.txt 一律不進 git
+*_pw.txt
+*_password.txt
+*_secret.txt
+*_secrets.txt
+superbase_pw.txt
+
 # Logs
 *.log
 npm-debug.log*
