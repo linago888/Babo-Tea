@@ -13,21 +13,17 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: web
     steps:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 11
+          version: 11.3.0
 
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: web/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -43,7 +39,6 @@ jobs:
 
       - name: Build
         env:
-          # build 不會真的連線，但 Prisma client 需要這些 env 才會載入
           DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
           DIRECT_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
           PAYLOAD_SECRET: ci-placeholder-secret

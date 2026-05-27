@@ -1,12 +1,24 @@
 # Dependencies
 node_modules/
 .pnpm-store/
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
 # Build outputs
-web/.next/
-web/out/
-web/build/
-web/dist/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# Prisma generated client (produced by `pnpm prisma generate`)
+/src/generated/
 
 # Env
 .env
@@ -21,10 +33,18 @@ web/dist/
 *_secrets.txt
 superbase_pw.txt
 
+# Testing
+coverage/
+
+# Vercel
+.vercel
+
 # Logs
 *.log
 npm-debug.log*
 pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # IDE / OS
 .idea/
@@ -33,18 +53,12 @@ pnpm-debug.log*
 !.vscode/settings.json
 .DS_Store
 Thumbs.db
+*.pem
 
 # Python
 __pycache__/
 *.pyc
 .venv/
 
-# Generated docs (產生器在 build_spec_docx.py，docx 是輸出產物)
-# 註：目前仍保留 docx 在 repo，方便非工程角色檢視；若要排除可取消下行註解
-# Global Boba Graph 網站詳細功能規格書.docx
-
-# Prisma
-web/prisma/migrations/dev_*
-
 # Payload
-web/media/
+media/

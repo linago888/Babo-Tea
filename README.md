@@ -6,53 +6,66 @@
 
 ```
 .
-├── web/                     # Next.js 16 應用（Phase 1 起的主程式）
-│   ├── src/
-│   │   ├── app/[locale]/    # i18n routes（zh-TW / zh-CN / en / ja）
-│   │   ├── i18n/            # next-intl routing / request / navigation
-│   │   └── proxy.ts         # locale middleware（Next 16 命名 proxy.ts）
-│   ├── prisma/              # Prisma schema（Day 3 起填入完整 model）
-│   ├── messages/            # i18n message catalogs
-│   ├── payload.config.ts    # Payload CMS 設定骨架（Phase 4 接 admin）
-│   └── prisma.config.ts     # Prisma 7 設定（含 dotenv 載入）
-├── prototype/               # 靜態 HTML/JS/CSS 原型（已凍結，僅供參考）
+├── src/
+│   ├── app/[locale]/        # i18n routes（zh-TW / zh-CN / en / ja）
+│   ├── i18n/                # next-intl routing / request / navigation
+│   ├── lib/                 # 共用 helper（prisma client 等）
+│   └── proxy.ts             # locale middleware（Next 16 命名 proxy.ts）
+├── prisma/                  # Prisma schema
+├── messages/                # i18n message catalogs
+├── public/                  # 靜態資源
+├── scripts/                 # 一次性 / 維運腳本（verify-db、seed 等）
+├── sql/                     # 手動 baseline SQL（Day 2 暫用）
+├── payload.config.ts        # Payload CMS 設定（Phase 4 接 admin）
+├── prisma.config.ts         # Prisma 7 設定（含 dotenv 載入）
 ├── data-model.md            # 完整資料模型規格（schema 來源）
 ├── prototype-spec.md        # 網站功能與頁面規格
 ├── build_spec_docx.py       # docx 規格書產生器
-└── Global Boba Graph 網站詳細功能規格書.docx  # 對外規格書
+└── prototype/               # 早期靜態 HTML/CSS/JS 原型（已凍結）
 ```
 
 ## 開發環境
 
 | 工具 | 版本 |
 |---|---|
-| Node.js | 24.x |
-| pnpm | 11.x |
+| Node.js | 24.x（或 20.x） |
+| pnpm | 11.3.0（由 `packageManager` 鎖定） |
 | PostgreSQL | 16+（Supabase / Neon / 本機） |
 
 ## 快速開始
 
 ```bash
-cd web
 cp .env.example .env.local   # 填入 DATABASE_URL 等
-pnpm install
-pnpm prisma generate
+pnpm install                 # 會自動跑 prisma generate
 pnpm dev                     # http://localhost:3000
 ```
 
 預設導向 `/zh-TW`，可切換 `/zh-CN`、`/en`、`/ja`。
 
+驗證 DB 連線：
+
+```bash
+pnpm verify:db
+```
+
 ## 開發階段
 
-依 `prototype-spec.md` §14 與 `data-model.md` §13，已完成 **Phase 1 Day 1**：
+依 `prototype-spec.md` §14 與 `data-model.md` §13：
 
-- ✅ Next.js 16 + TypeScript + Tailwind 4 scaffold
-- ✅ Prisma 7 設定（schema、prisma.config.ts、dotenv）
-- ✅ Payload v3 設定骨架（admin 於 Phase 4 啟用）
-- ✅ next-intl i18n routing（4 locales）+ proxy middleware
-- ✅ GitHub Actions CI（typecheck、lint、build）
+- ✅ **Phase 1 Day 1**：Next.js 16 + TS + Tailwind 4 + Prisma 7 + Payload v3 + next-intl scaffold
+- ✅ **Phase 1 Day 2**：Supabase 連線、Prisma Client 端到端驗證、GitHub remote、Vercel 部署
+- 🚧 **Day 3-7**：依 `data-model.md` §1-§8 把 6 張主表 + 關聯表 + 補強表寫進 `prisma/schema.prisma`，並 seed vertical slice（5 城市 × 10 品牌 × 15 飲品 × 10 新聞）
 
-下一步（Day 3-7）：依 `data-model.md` §1-§8 把 6 張主表 + 關聯表 + 補強表寫進 `prisma/schema.prisma`，並 seed vertical slice（5 城市 × 10 品牌 × 15 飲品 × 10 新聞）。
+## Schema 流程（Day 2 暫時方案）
+
+Supabase free tier 在 ap-southeast-2 的 direct connection 是 IPv6-only，session pooler 未開通；本機 + Vercel 都走 transaction pooler (6543)。Prisma migration engine 在 transaction-pooled 連線無法跑 prepared statements，因此目前流程：
+
+1. 修改 `prisma/schema.prisma`
+2. `pnpm prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script --output sql/NNN_xxx.sql`
+3. 把 SQL 貼進 Supabase Dashboard → SQL Editor 跑
+4. `pnpm prisma generate` 同步 Client 型別
+
+升級到 Supabase Pro（或加 IPv4 add-on）後就能回到 `pnpm prisma migrate dev` 的自動化流程。
 
 ## 文件
 
