@@ -2,5 +2,8 @@
   "name": "boba-graph",
   "private": true,
   "description": "Global Boba Graph monorepo. Next.js app lives in web/. Build commands delegated via vercel.json.",
-  "packageManager": "pnpm@11.3.0"
+  "packageManager": "pnpm@11.3.0",
+  "dependencies": {
+    "next": "16.2.6"
+  }
 }
