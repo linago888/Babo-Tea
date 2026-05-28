@@ -15,7 +15,8 @@
     "verify:relations": "tsx --env-file=.env.local scripts/verify-relations.ts",
     "verify:stores": "tsx --env-file=.env.local scripts/verify-stores.ts",
     "verify:metrics": "tsx --env-file=.env.local scripts/verify-metrics.ts",
-    "metrics:run": "tsx --env-file=.env.local scripts/metrics-job.ts"
+    "metrics:run": "tsx --env-file=.env.local scripts/metrics-job.ts",
+    "seed": "tsx --env-file=.env.local prisma/seed/index.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.84.1",
