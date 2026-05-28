@@ -162,44 +162,6 @@ enum CompanyRelation {
   @@map("company_relation")
 }
 
-/// metrics_daily.entity_kind — 哪一種實體在被量測
-/// 註：polymorphic 設計（不走 Prisma FK），所以 entity 刪除時 metrics_daily
-/// 不會 cascade — 需要 app 層 hook 處理（見 lib/metrics/compute.ts）
-enum MetricEntityKind {
-  BRAND @map("brand")
-  CITY  @map("city")
-  DRINK @map("drink")
-
-  @@map("metric_entity_kind")
-}
-
-/// metrics_daily.metric — 衍生指標的種類
-/// data-model.md §7：
-///   - trending_score        對外公開分數 0-100
-///   - market_maturity       城市市場成熟度（分桶）
-///   - popularity_score      drink×city 熱度
-///   - news_count_30d        過去 30 天提及次數（raw input）
-///   - new_store_count_30d   過去 30 天新增門店數（brand raw input）
-///   - new_store_count_90d   過去 90 天新增門店數
-///   - social_mention_30d    過去 30 天社群提及（資料源接上後再計）
-///   - search_volume_30d     過去 30 天搜尋量（資料源接上後再計）
-///   - active_store_count    當下活躍門店數（city raw input）
-///   - distinct_brand_count  當下不同品牌數（city raw input）
-enum MetricKind {
-  TRENDING_SCORE       @map("trending_score")
-  MARKET_MATURITY      @map("market_maturity")
-  POPULARITY_SCORE     @map("popularity_score")
-  NEWS_COUNT_30D       @map("news_count_30d")
-  NEW_STORE_COUNT_30D  @map("new_store_count_30d")
-  NEW_STORE_COUNT_90D  @map("new_store_count_90d")
-  SOCIAL_MENTION_30D   @map("social_mention_30d")
-  SEARCH_VOLUME_30D    @map("search_volume_30d")
-  ACTIVE_STORE_COUNT   @map("active_store_count")
-  DISTINCT_BRAND_COUNT @map("distinct_brand_count")
-
-  @@map("metric_kind")
-}
-
 // ─────────────────────────────────────────────────────────────
 // Day 1 baseline：保留 HealthCheck（Day 2 已落地，不影響）
 // ─────────────────────────────────────────────────────────────
@@ -668,38 +630,4 @@ model Store {
   // 地理 bounding box 查詢（簡易版，未來 PostGIS 取代）
   @@index([lat, lng])
   @@map("stores")
-}
-
-// ─────────────────────────────────────────────────────────────
-// §7 metrics_daily（Day 6）
-// 衍生指標歷史表 — 所有分數類欄位（trending_score、market_maturity、
-// popularity_score）的真實儲存位置，主實體欄位只是 view 的 latest 快取
-//
-// 設計重點：
-// - polymorphic：entity_kind + entity_id 而非 brand_id / city_id / drink_id 拆三欄
-//   優點：新增 entity type（如 store / company）不需 migration
-//   代價：沒有 FK cascade — entity 被刪時要 app 層或 trigger 清歷史
-// - PK 含 (entity_kind, entity_id, metric, date) 保證每天每 metric 一筆
-// - inputs jsonb 存當次計算的輸入快照，方便：
-//     1. 解釋為什麼分數變動（後台展開）
-//     2. 公式調整後重算（不依賴外部來源歷史）
-// ─────────────────────────────────────────────────────────────
-
-model MetricDaily {
-  entityKind MetricEntityKind @map("entity_kind")
-  entityId   String           @map("entity_id") @db.Uuid
-  metric     MetricKind
-  date       DateTime         @db.Date
-  value      Decimal          @db.Decimal(10, 4)
-  inputs     Json? /// 計算當下的輸入快照，可重算可審計（見 data-model.md §7.2）
-  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  @@id([entityKind, entityId, metric, date])
-  // leaderboard：某指標在某天的排行（前 N 名）
-  @@index([metric, date, value(sort: Desc)])
-  // 時間軸：某實體某指標的歷史走勢
-  @@index([entityKind, entityId, metric, date(sort: Desc)])
-  // 當日全表 / 補算 / housekeeping
-  @@index([date])
-  @@map("metrics_daily")
 }
