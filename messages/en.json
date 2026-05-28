@@ -295,6 +295,130 @@
     "datamodel": "Data model",
     "copyright": "© {year} Global Boba Graph. Demo content for development."
   },
+  "admin": {
+    "title": "Editorial Console",
+    "subtitle": "Internal dashboard for the editorial team",
+    "backToSite": "← Back to site",
+    "footerNote": "Editorial console · Full content CRUD lands in Phase 5",
+    "nav": {
+      "dashboard": "Dashboard",
+      "overview": "Overview",
+      "content": "Content",
+      "brands": "Brands",
+      "cities": "Cities",
+      "drinks": "Drinks",
+      "news": "News",
+      "sources": "Sources",
+      "taxonomies": "Taxonomies",
+      "quality": "Quality",
+      "qualityDashboard": "Quality dashboard",
+      "orphans": "Orphans",
+      "aiQueue": "AI summary queue",
+      "system": "System",
+      "settings": "Settings"
+    },
+    "overview": {
+      "title": "Editorial overview",
+      "subtitle": "Catalogue snapshot. Click through to manage each module.",
+      "modules": "Modules",
+      "contentQuality": "Content quality",
+      "contentQualityDesc": "Completeness scores, orphan entities, AI summary review queue.",
+      "contentEditor": "Content editor",
+      "contentEditorDesc": "Brand editor available now. Cities / drinks / news editors arrive next.",
+      "viewLive": "View live →",
+      "cards": {
+        "brands": "Brands",
+        "cities": "Cities",
+        "drinks": "Drinks",
+        "news": "News",
+        "sources": "Sources"
+      }
+    },
+    "quality": {
+      "title": "Content quality",
+      "subtitle": "Run `pnpm quality:run` to refresh scores.",
+      "completeness": "Completeness distribution",
+      "lowest": "Lowest completeness scores (top 5)",
+      "orphans": "Orphan entities",
+      "total": "total",
+      "average": "avg",
+      "aiQueueTitle": "AI summary queue",
+      "aiQueueDesc": "News with AI summary draft but no editor review yet — not yet public.",
+      "aiQueueEmpty": "No queue.",
+      "reviewDueTitle": "Review-due",
+      "reviewDueDesc": "Entities whose `review_due_at` is past — need editorial re-check.",
+      "reviewDueEmpty": "No items past due.",
+      "buckets": {
+        "high": "≥ 80",
+        "mid": "50–79",
+        "low": "< 50",
+        "unscored": "unscored"
+      },
+      "allLinked": "None — all linked."
+    },
+    "brands": {
+      "listTitle": "Brands",
+      "listSubtitle": "{count} brands tracked. Click a row to edit.",
+      "create": "Create brand",
+      "search": "Search by name or slug…",
+      "table": {
+        "name": "Name",
+        "country": "Country",
+        "tier": "Tier",
+        "model": "Model",
+        "status": "Status",
+        "completeness": "Completeness",
+        "updated": "Updated",
+        "actions": ""
+      },
+      "status": {
+        "draft": "Draft",
+        "published": "Published",
+        "archived": "Archived"
+      },
+      "edit": {
+        "title": "Edit brand",
+        "createTitle": "Create brand",
+        "notFound": "Brand not found",
+        "tabs": {
+          "general": "General",
+          "i18n": "Translations",
+          "seo": "SEO",
+          "advanced": "Advanced",
+          "relations": "Relations"
+        },
+        "fields": {
+          "slug": "Slug",
+          "slugHint": "URL identifier. Lowercase, dashes only.",
+          "countryCode": "Country",
+          "foundedYear": "Founded year",
+          "headquartersCity": "Headquarters city",
+          "businessModel": "Business model",
+          "priceTier": "Price tier",
+          "positioningTags": "Positioning tags",
+          "positioningHint": "Comma-separated. Taxonomy codes: fruit-tea, premium, instagrammable…",
+          "officialWebsite": "Official website",
+          "logoUrl": "Logo URL",
+          "socialHandles": "Social handles (JSON)",
+          "verified": "Verified by editorial team",
+          "status": "Status",
+          "nameI18n": "Name",
+          "descriptionI18n": "Description",
+          "seoTitle": "SEO title",
+          "seoDescription": "SEO description",
+          "seoFaq": "FAQ (JSON array)"
+        },
+        "saveButton": "Save",
+        "saving": "Saving…",
+        "saved": "Saved successfully",
+        "deleteButton": "Delete (archive)",
+        "deleteConfirm": "Archive this brand? It won't be deleted, just hidden from the public site.",
+        "validationErrors": "Some required fields are missing or invalid:",
+        "back": "← Back to brands"
+      }
+    },
+    "soon": "(coming soon)"
+  },
   "theme": {
     "label": "Toggle theme"
   },

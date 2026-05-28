@@ -295,6 +295,130 @@
     "datamodel": "データモデル",
     "copyright": "© {year} Global Boba Graph。開発段階のデモコンテンツ。"
   },
+  "admin": {
+    "title": "編集コンソール",
+    "subtitle": "編集チーム内部ダッシュボード",
+    "backToSite": "← サイトに戻る",
+    "footerNote": "編集コンソール · 完全なコンテンツ CRUD は Phase 5 で提供",
+    "nav": {
+      "dashboard": "ダッシュボード",
+      "overview": "概要",
+      "content": "コンテンツ管理",
+      "brands": "ブランド",
+      "cities": "都市",
+      "drinks": "ドリンク",
+      "news": "ニュース",
+      "sources": "ニュース出典",
+      "taxonomies": "統制語彙",
+      "quality": "コンテンツ品質",
+      "qualityDashboard": "品質ダッシュボード",
+      "orphans": "孤立エンティティ",
+      "aiQueue": "AI 要約レビュー",
+      "system": "システム",
+      "settings": "設定"
+    },
+    "overview": {
+      "title": "編集概要",
+      "subtitle": "データベース状況。各モジュールをクリックして管理。",
+      "modules": "管理モジュール",
+      "contentQuality": "コンテンツ品質",
+      "contentQualityDesc": "完成度スコア・孤立エンティティ・AI 要約レビュー。",
+      "contentEditor": "コンテンツエディタ",
+      "contentEditorDesc": "ブランドエディタ公開中。都市・ドリンク・ニュースエディタは順次。",
+      "viewLive": "公開ページを見る →",
+      "cards": {
+        "brands": "ブランド",
+        "cities": "都市",
+        "drinks": "ドリンク",
+        "news": "ニュース",
+        "sources": "ニュース出典"
+      }
+    },
+    "quality": {
+      "title": "コンテンツ品質",
+      "subtitle": "スコア更新は `pnpm quality:run` を実行。",
+      "completeness": "完成度分布",
+      "lowest": "完成度ワースト 5",
+      "orphans": "孤立エンティティ",
+      "total": "件",
+      "average": "平均",
+      "aiQueueTitle": "AI 要約レビュー",
+      "aiQueueDesc": "AI 要約ドラフトがあり未審査のニュース。非公開。",
+      "aiQueueEmpty": "キューはありません。",
+      "reviewDueTitle": "再審査必要",
+      "reviewDueDesc": "`review_due_at` 期限切れのエンティティ。",
+      "reviewDueEmpty": "期限切れ項目なし。",
+      "buckets": {
+        "high": "≥ 80",
+        "mid": "50–79",
+        "low": "< 50",
+        "unscored": "未評価"
+      },
+      "allLinked": "すべて関連付け済み。"
+    },
+    "brands": {
+      "listTitle": "ブランド",
+      "listSubtitle": "{count} ブランドを追跡中。行クリックで編集。",
+      "create": "ブランド作成",
+      "search": "名前または slug で検索…",
+      "table": {
+        "name": "名前",
+        "country": "国",
+        "tier": "価格帯",
+        "model": "経営形態",
+        "status": "状態",
+        "completeness": "完成度",
+        "updated": "最終更新",
+        "actions": ""
+      },
+      "status": {
+        "draft": "下書き",
+        "published": "公開",
+        "archived": "アーカイブ"
+      },
+      "edit": {
+        "title": "ブランド編集",
+        "createTitle": "ブランド作成",
+        "notFound": "ブランドが見つかりません",
+        "tabs": {
+          "general": "基本",
+          "i18n": "多言語",
+          "seo": "SEO",
+          "advanced": "詳細",
+          "relations": "関連"
+        },
+        "fields": {
+          "slug": "Slug",
+          "slugHint": "URL 識別子。小文字・数字・ハイフンのみ。",
+          "countryCode": "国",
+          "foundedYear": "創業年",
+          "headquartersCity": "本社所在地",
+          "businessModel": "経営形態",
+          "priceTier": "価格帯",
+          "positioningTags": "ポジショニングタグ",
+          "positioningHint": "カンマ区切り。例：fruit-tea, premium…",
+          "officialWebsite": "公式サイト",
+          "logoUrl": "Logo URL",
+          "socialHandles": "SNS アカウント（JSON）",
+          "verified": "編集チーム確認済み",
+          "status": "状態",
+          "nameI18n": "名前",
+          "descriptionI18n": "ブランド紹介",
+          "seoTitle": "SEO タイトル",
+          "seoDescription": "SEO 説明",
+          "seoFaq": "FAQ（JSON 配列）"
+        },
+        "saveButton": "保存",
+        "saving": "保存中…",
+        "saved": "保存しました",
+        "deleteButton": "アーカイブ（削除しない）",
+        "deleteConfirm": "このブランドをアーカイブしますか？データは保持され、公開サイトのみから非表示になります。",
+        "validationErrors": "以下のフィールドに不備があります：",
+        "back": "← ブランド一覧へ"
+      }
+    },
+    "soon": "（近日公開）"
+  },
   "theme": {
     "label": "テーマ切替"
   },

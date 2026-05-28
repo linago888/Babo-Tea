@@ -1,5 +1,7 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
+import { getAdminLocale } from "@/lib/admin-i18n";
 import {
   detectOrphans,
   detectPendingAiSummaries,
@@ -88,31 +90,34 @@ function scoreColor(score: number | null): string {
 }
 
 export default async function QualityDashboardPage() {
+  const locale = await getAdminLocale();
+  const t = await getTranslations({ locale, namespace: "admin.quality" });
+  const tBuckets = await getTranslations({ locale, namespace: "admin.quality.buckets" });
   const data = await loadQualityData();
 
   return (
     <>
       <header className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Content quality</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
         <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-          Run <code className="rounded bg-neutral-100 px-1 py-0.5 text-xs dark:bg-neutral-800">pnpm quality:run</code> to refresh scores.
+          {t("subtitle")}
         </p>
       </header>
 
       {/* Completeness summary */}
       <section className="mb-10">
-        <h2 className="mb-3 text-lg font-semibold">Completeness distribution</h2>
+        <h2 className="mb-3 text-lg font-semibold">{t("completeness")}</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <DistributionCard label="Brands" items={data.brands} />
-          <DistributionCard label="Cities" items={data.cities} />
-          <DistributionCard label="Drinks" items={data.drinks} />
-          <DistributionCard label="News" items={data.news} />
+          <DistributionCard label="Brands" items={data.brands} bucketLabels={{ high: tBuckets("high"), mid: tBuckets("mid"), low: tBuckets("low"), unscored: tBuckets("unscored") }} avgLabel={t("average")} />
+          <DistributionCard label="Cities" items={data.cities} bucketLabels={{ high: tBuckets("high"), mid: tBuckets("mid"), low: tBuckets("low"), unscored: tBuckets("unscored") }} avgLabel={t("average")} />
+          <DistributionCard label="Drinks" items={data.drinks} bucketLabels={{ high: tBuckets("high"), mid: tBuckets("mid"), low: tBuckets("low"), unscored: tBuckets("unscored") }} avgLabel={t("average")} />
+          <DistributionCard label="News" items={data.news} bucketLabels={{ high: tBuckets("high"), mid: tBuckets("mid"), low: tBuckets("low"), unscored: tBuckets("unscored") }} avgLabel={t("average")} />
         </div>
       </section>
 
       {/* Low-scoring entities */}
       <section className="mb-10">
-        <h2 className="mb-3 text-lg font-semibold">Lowest completeness scores (top 5)</h2>
+        <h2 className="mb-3 text-lg font-semibold">{t("lowest")}</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <LowList label="Brands" items={data.brands.slice(0, 5)} pathPrefix="brands" useTitle={false} />
           <LowList label="Cities" items={data.cities.slice(0, 5)} pathPrefix="cities" useTitle={false} />
@@ -124,28 +129,28 @@ export default async function QualityDashboardPage() {
       {/* Orphans */}
       <section className="mb-10">
         <h2 className="mb-3 text-lg font-semibold">
-          Orphan entities ·{" "}
+          {t("orphans")} ·{" "}
           {data.orphans.brands.length +
             data.orphans.cities.length +
             data.orphans.drinks.length +
             data.orphans.news.length +
             data.orphans.sources.length}{" "}
-          total
+          {t("total")}
         </h2>
-        <OrphanGrid orphans={data.orphans} />
+        <OrphanGrid orphans={data.orphans} allLinkedLabel={t("allLinked")} />
       </section>
 
       {/* AI summary queue + review due */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
           <h2 className="mb-2 text-lg font-semibold">
-            AI summary queue · {data.aiPending.length}
+            {t("aiQueueTitle")} · {data.aiPending.length}
           </h2>
           <p className="mb-3 text-xs text-neutral-500 dark:text-neutral-400">
-            News with AI summary draft but no editor review yet — not yet public.
+            {t("aiQueueDesc")}
           </p>
           {data.aiPending.length === 0 ? (
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">No queue.</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">{t("aiQueueEmpty")}</p>
           ) : (
             <ul className="flex flex-col gap-1.5 text-sm">
               {data.aiPending.slice(0, 10).map((n) => (
@@ -166,21 +171,21 @@ export default async function QualityDashboardPage() {
 
         <div className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
           <h2 className="mb-2 text-lg font-semibold">
-            Review-due ·{" "}
+            {t("reviewDueTitle")} ·{" "}
             {data.reviewDue.brands.length +
               data.reviewDue.cities.length +
               data.reviewDue.drinks.length +
               data.reviewDue.news.length}
           </h2>
           <p className="mb-3 text-xs text-neutral-500 dark:text-neutral-400">
-            Entities whose `review_due_at` is past — need editorial re-check.
+            {t("reviewDueDesc")}
           </p>
           {data.reviewDue.brands.length +
             data.reviewDue.cities.length +
             data.reviewDue.drinks.length +
             data.reviewDue.news.length ===
           0 ? (
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">No items past due.</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">{t("reviewDueEmpty")}</p>
           ) : (
             <ul className="flex flex-col gap-1.5 text-sm">
               {[
@@ -215,7 +220,17 @@ export default async function QualityDashboardPage() {
   );
 }
 
-function DistributionCard({ label, items }: { label: string; items: Scored[] }) {
+function DistributionCard({
+  label,
+  items,
+  bucketLabels,
+  avgLabel,
+}: {
+  label: string;
+  items: Scored[];
+  bucketLabels: { high: string; mid: string; low: string; unscored: string };
+  avgLabel: string;
+}) {
   const buckets = distribute(items);
   const total = items.length;
   const avg =
@@ -228,7 +243,7 @@ function DistributionCard({ label, items }: { label: string; items: Scored[] }) 
         <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
           {label}
         </h3>
-        <span className="text-xs text-neutral-500">avg {Math.round(avg)}</span>
+        <span className="text-xs text-neutral-500">{avgLabel} {Math.round(avg)}</span>
       </div>
       <p className="mt-1 text-3xl font-bold tabular-nums">{total}</p>
       {/* Stacked bar */}
@@ -248,20 +263,20 @@ function DistributionCard({ label, items }: { label: string; items: Scored[] }) 
       </div>
       <ul className="mt-3 flex flex-col gap-1 text-xs">
         <li className="flex justify-between">
-          <span className="text-emerald-700 dark:text-emerald-400">≥ 80</span>
+          <span className="text-emerald-700 dark:text-emerald-400">{bucketLabels.high}</span>
           <span className="tabular-nums">{buckets.high}</span>
         </li>
         <li className="flex justify-between">
-          <span className="text-amber-700 dark:text-amber-400">50–79</span>
+          <span className="text-amber-700 dark:text-amber-400">{bucketLabels.mid}</span>
           <span className="tabular-nums">{buckets.mid}</span>
         </li>
         <li className="flex justify-between">
-          <span className="text-rose-700 dark:text-rose-400">&lt; 50</span>
+          <span className="text-rose-700 dark:text-rose-400">{bucketLabels.low}</span>
           <span className="tabular-nums">{buckets.low}</span>
         </li>
         {buckets.unscored > 0 ? (
           <li className="flex justify-between">
-            <span className="text-neutral-500">unscored</span>
+            <span className="text-neutral-500">{bucketLabels.unscored}</span>
             <span className="tabular-nums">{buckets.unscored}</span>
           </li>
         ) : null}
@@ -319,6 +334,7 @@ function LowList({
 
 function OrphanGrid({
   orphans,
+  allLinkedLabel,
 }: {
   orphans: {
     brands: Array<{ slug: string }>;
@@ -327,6 +343,7 @@ function OrphanGrid({
     news: Array<{ slug: string }>;
     sources: Array<{ slug: string }>;
   };
+  allLinkedLabel: string;
 }) {
   const groups: Array<{ label: string; kind: string; items: Array<{ slug: string }> }> = [
     { label: "Brands", kind: "brands", items: orphans.brands },
@@ -347,7 +364,7 @@ function OrphanGrid({
             {g.label} · {g.items.length}
           </h3>
           {g.items.length === 0 ? (
-            <p className="text-xs text-neutral-500 dark:text-neutral-500">None — all linked.</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-500">{allLinkedLabel}</p>
           ) : (
             <ul className="flex flex-col gap-1 text-sm">
               {g.items.slice(0, 8).map((it) => (

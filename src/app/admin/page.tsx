@@ -1,10 +1,15 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
+import { getAdminLocale } from "@/lib/admin-i18n";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic"; // admin 數據要即時
+export const dynamic = "force-dynamic";
 
 export default async function AdminIndexPage() {
+  const locale = await getAdminLocale();
+  const t = await getTranslations({ locale, namespace: "admin" });
+
   const [brandCount, cityCount, drinkCount, newsCount, sourceCount] = await Promise.all([
     prisma.brand.count(),
     prisma.city.count(),
@@ -16,62 +21,73 @@ export default async function AdminIndexPage() {
   return (
     <>
       <header className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Editorial overview</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t("overview.title")}</h1>
         <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-          Snapshot of the catalogue. Click through to manage each module.
+          {t("overview.subtitle")}
         </p>
       </header>
 
-      <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {[
-          { label: "Brands", count: brandCount, href: "/brands" },
-          { label: "Cities", count: cityCount, href: "/cities" },
-          { label: "Drinks", count: drinkCount, href: "/drinks" },
-          { label: "News", count: newsCount, href: "/news" },
-          { label: "Sources", count: sourceCount, href: null },
+          { label: t("overview.cards.brands"), count: brandCount, href: "/brands", admin: "/admin/brands" },
+          { label: t("overview.cards.cities"), count: cityCount, href: "/cities", admin: null },
+          { label: t("overview.cards.drinks"), count: drinkCount, href: "/drinks", admin: null },
+          { label: t("overview.cards.news"), count: newsCount, href: "/news", admin: null },
+          { label: t("overview.cards.sources"), count: sourceCount, href: null, admin: null },
         ].map((m) => (
           <li
             key={m.label}
-            className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+            className="rounded-xl border border-neutral-200 bg-white p-5 transition hover:border-neutral-300 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700"
           >
             <p className="text-3xl font-bold tabular-nums">{m.count}</p>
             <p className="mt-1 text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
               {m.label}
             </p>
-            {m.href ? (
-              <Link
-                href={m.href}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-3 inline-block text-xs text-amber-700 hover:underline dark:text-amber-400"
-              >
-                View live →
-              </Link>
-            ) : null}
+            <div className="mt-3 flex flex-col gap-1 text-xs">
+              {m.admin ? (
+                <Link
+                  href={m.admin}
+                  className="text-rose-700 hover:underline dark:text-rose-400"
+                >
+                  Manage →
+                </Link>
+              ) : null}
+              {m.href ? (
+                <Link
+                  href={m.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-neutral-500 hover:text-neutral-900 dark:text-neutral-500 dark:hover:text-neutral-300"
+                >
+                  {t("overview.viewLive")}
+                </Link>
+              ) : null}
+            </div>
           </li>
         ))}
       </ul>
 
       <section className="mt-10">
-        <h2 className="mb-3 text-lg font-semibold">Modules</h2>
+        <h2 className="mb-3 text-lg font-semibold">{t("overview.modules")}</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Link
-            href="/admin/quality"
-            className="block rounded-xl border border-neutral-200 bg-white p-5 transition hover:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-600"
+            href="/admin/brands"
+            className="block rounded-xl border border-neutral-200 bg-white p-5 transition hover:border-rose-400 hover:shadow-sm dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-rose-700"
           >
-            <h3 className="text-base font-semibold">Content quality</h3>
+            <h3 className="text-base font-semibold">{t("overview.contentEditor")}</h3>
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-              Completeness scores, orphan entities, AI summary review queue.
+              {t("overview.contentEditorDesc")}
             </p>
           </Link>
-          <div className="block rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-5 dark:border-neutral-700 dark:bg-neutral-900/40">
-            <h3 className="text-base font-semibold text-neutral-500 dark:text-neutral-500">
-              Content editor (Phase 4.5)
-            </h3>
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-500">
-              Brand / city / drink / news CRUD via Payload v3 — not yet wired.
+          <Link
+            href="/admin/quality"
+            className="block rounded-xl border border-neutral-200 bg-white p-5 transition hover:border-rose-400 hover:shadow-sm dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-rose-700"
+          >
+            <h3 className="text-base font-semibold">{t("overview.contentQuality")}</h3>
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+              {t("overview.contentQualityDesc")}
             </p>
-          </div>
+          </Link>
         </div>
       </section>
     </>

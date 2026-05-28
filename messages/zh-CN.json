@@ -295,6 +295,130 @@
     "datamodel": "数据模型",
     "copyright": "© {year} Global Boba Graph。开发阶段示范内容。"
   },
+  "admin": {
+    "title": "编辑后台",
+    "subtitle": "编辑团队内部仪表板",
+    "backToSite": "← 回网站",
+    "footerNote": "编辑后台 · 完整内容 CRUD 将于 Phase 5 上线",
+    "nav": {
+      "dashboard": "仪表板",
+      "overview": "总览",
+      "content": "内容管理",
+      "brands": "品牌",
+      "cities": "城市",
+      "drinks": "饮品",
+      "news": "新闻",
+      "sources": "新闻来源",
+      "taxonomies": "受控词汇",
+      "quality": "内容质量",
+      "qualityDashboard": "质量仪表板",
+      "orphans": "孤儿实体",
+      "aiQueue": "AI 摘要待审",
+      "system": "系统",
+      "settings": "设置"
+    },
+    "overview": {
+      "title": "编辑总览",
+      "subtitle": "数据库即时状态。点击各模组进入管理页。",
+      "modules": "管理模组",
+      "contentQuality": "内容质量",
+      "contentQualityDesc": "完整度分数、孤儿实体、AI 摘要审核队列。",
+      "contentEditor": "内容编辑器",
+      "contentEditorDesc": "品牌编辑器已上线。城市 / 饮品 / 新闻编辑器陆续推出。",
+      "viewLive": "查看公开页面 →",
+      "cards": {
+        "brands": "品牌",
+        "cities": "城市",
+        "drinks": "饮品",
+        "news": "新闻",
+        "sources": "新闻来源"
+      }
+    },
+    "quality": {
+      "title": "内容质量",
+      "subtitle": "执行 `pnpm quality:run` 重算所有分数。",
+      "completeness": "完整度分布",
+      "lowest": "最低分前 5 名",
+      "orphans": "孤儿实体",
+      "total": "条",
+      "average": "平均",
+      "aiQueueTitle": "AI 摘要待审",
+      "aiQueueDesc": "新闻含 AI 摘要草稿但未经编辑审核 — 暂不对外公开。",
+      "aiQueueEmpty": "目前无待审项目。",
+      "reviewDueTitle": "需重新审查",
+      "reviewDueDesc": "`review_due_at` 已到期的实体 — 需要编辑团队重新检视。",
+      "reviewDueEmpty": "暂无到期项目。",
+      "buckets": {
+        "high": "≥ 80 分",
+        "mid": "50–79 分",
+        "low": "< 50 分",
+        "unscored": "未评分"
+      },
+      "allLinked": "全部已关联。"
+    },
+    "brands": {
+      "listTitle": "品牌",
+      "listSubtitle": "追踪中 {count} 个品牌。点击任一列进入编辑。",
+      "create": "新增品牌",
+      "search": "依名称或 slug 搜索…",
+      "table": {
+        "name": "名称",
+        "country": "国家",
+        "tier": "价格带",
+        "model": "经营模式",
+        "status": "状态",
+        "completeness": "完整度",
+        "updated": "最后更新",
+        "actions": ""
+      },
+      "status": {
+        "draft": "草稿",
+        "published": "已发布",
+        "archived": "已封存"
+      },
+      "edit": {
+        "title": "编辑品牌",
+        "createTitle": "新增品牌",
+        "notFound": "找不到此品牌",
+        "tabs": {
+          "general": "基本资料",
+          "i18n": "多语翻译",
+          "seo": "SEO",
+          "advanced": "进阶",
+          "relations": "关联资料"
+        },
+        "fields": {
+          "slug": "Slug",
+          "slugHint": "URL 标识符。仅限小写字母、数字、连字号。",
+          "countryCode": "国家",
+          "foundedYear": "成立年份",
+          "headquartersCity": "总部城市",
+          "businessModel": "经营模式",
+          "priceTier": "价格带",
+          "positioningTags": "品牌定位标签",
+          "positioningHint": "逗号分隔。Taxonomy code，例如：fruit-tea, premium…",
+          "officialWebsite": "官方网站",
+          "logoUrl": "Logo URL",
+          "socialHandles": "社群账号（JSON）",
+          "verified": "编辑团队已验证",
+          "status": "状态",
+          "nameI18n": "名称",
+          "descriptionI18n": "品牌介绍",
+          "seoTitle": "SEO 标题",
+          "seoDescription": "SEO 描述",
+          "seoFaq": "常见问答（JSON 数组）"
+        },
+        "saveButton": "保存",
+        "saving": "保存中…",
+        "saved": "保存成功",
+        "deleteButton": "封存（不删除）",
+        "deleteConfirm": "确定要封存此品牌吗？数据不会删除，仅从公开网站下架。",
+        "validationErrors": "以下字段缺失或格式错误：",
+        "back": "← 回品牌列表"
+      }
+    },
+    "soon": "（即将推出）"
+  },
   "theme": {
     "label": "切换主题"
   },

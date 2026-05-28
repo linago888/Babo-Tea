@@ -295,6 +295,130 @@
     "datamodel": "資料模型",
     "copyright": "© {year} Global Boba Graph。開發階段示範內容。"
   },
+  "admin": {
+    "title": "編輯後台",
+    "subtitle": "編輯團隊內部儀表板",
+    "backToSite": "← 回網站",
+    "footerNote": "編輯後台 · 完整內容 CRUD 將於 Phase 5 上線",
+    "nav": {
+      "dashboard": "儀表板",
+      "overview": "總覽",
+      "content": "內容管理",
+      "brands": "品牌",
+      "cities": "城市",
+      "drinks": "飲品",
+      "news": "新聞",
+      "sources": "新聞來源",
+      "taxonomies": "受控詞彙",
+      "quality": "內容品質",
+      "qualityDashboard": "品質儀表板",
+      "orphans": "孤兒實體",
+      "aiQueue": "AI 摘要待審",
+      "system": "系統",
+      "settings": "設定"
+    },
+    "overview": {
+      "title": "編輯總覽",
+      "subtitle": "資料庫即時狀態。點擊各模組進入管理頁。",
+      "modules": "管理模組",
+      "contentQuality": "內容品質",
+      "contentQualityDesc": "完整度分數、孤兒實體、AI 摘要審核隊列。",
+      "contentEditor": "內容編輯器",
+      "contentEditorDesc": "品牌編輯器已上線。城市 / 飲品 / 新聞編輯器陸續推出。",
+      "viewLive": "查看公開頁面 →",
+      "cards": {
+        "brands": "品牌",
+        "cities": "城市",
+        "drinks": "飲品",
+        "news": "新聞",
+        "sources": "新聞來源"
+      }
+    },
+    "quality": {
+      "title": "內容品質",
+      "subtitle": "執行 `pnpm quality:run` 重算所有分數。",
+      "completeness": "完整度分佈",
+      "lowest": "最低分前 5 名",
+      "orphans": "孤兒實體",
+      "total": "筆",
+      "average": "平均",
+      "aiQueueTitle": "AI 摘要待審",
+      "aiQueueDesc": "新聞含 AI 摘要草稿但未經編輯審核 — 暫不對外公開。",
+      "aiQueueEmpty": "目前無待審項目。",
+      "reviewDueTitle": "需重新審查",
+      "reviewDueDesc": "`review_due_at` 已到期的實體 — 需要編輯團隊重新檢視。",
+      "reviewDueEmpty": "暫無到期項目。",
+      "buckets": {
+        "high": "≥ 80 分",
+        "mid": "50–79 分",
+        "low": "< 50 分",
+        "unscored": "未評分"
+      },
+      "allLinked": "全部已關聯。"
+    },
+    "brands": {
+      "listTitle": "品牌",
+      "listSubtitle": "追蹤中 {count} 個品牌。點擊任一列進入編輯。",
+      "create": "新增品牌",
+      "search": "依名稱或 slug 搜尋…",
+      "table": {
+        "name": "名稱",
+        "country": "國家",
+        "tier": "價格帶",
+        "model": "經營模式",
+        "status": "狀態",
+        "completeness": "完整度",
+        "updated": "最後更新",
+        "actions": ""
+      },
+      "status": {
+        "draft": "草稿",
+        "published": "已發布",
+        "archived": "已封存"
+      },
+      "edit": {
+        "title": "編輯品牌",
+        "createTitle": "新增品牌",
+        "notFound": "找不到此品牌",
+        "tabs": {
+          "general": "基本資料",
+          "i18n": "多語翻譯",
+          "seo": "SEO",
+          "advanced": "進階",
+          "relations": "關聯資料"
+        },
+        "fields": {
+          "slug": "Slug",
+          "slugHint": "URL 識別碼。僅限小寫字母、數字、連字號。",
+          "countryCode": "國家",
+          "foundedYear": "成立年份",
+          "headquartersCity": "總部城市",
+          "businessModel": "經營模式",
+          "priceTier": "價格帶",
+          "positioningTags": "品牌定位標籤",
+          "positioningHint": "逗號分隔。Taxonomy code，例如：fruit-tea, premium, instagrammable…",
+          "officialWebsite": "官方網站",
+          "logoUrl": "Logo URL",
+          "socialHandles": "社群帳號（JSON）",
+          "verified": "編輯團隊已驗證",
+          "status": "狀態",
+          "nameI18n": "名稱",
+          "descriptionI18n": "品牌介紹",
+          "seoTitle": "SEO 標題",
+          "seoDescription": "SEO 描述",
+          "seoFaq": "常見問答（JSON 陣列）"
+        },
+        "saveButton": "儲存",
+        "saving": "儲存中…",
+        "saved": "儲存成功",
+        "deleteButton": "封存（不刪除）",
+        "deleteConfirm": "確定要封存此品牌嗎？資料不會刪除，僅從公開網站下架。",
+        "validationErrors": "以下欄位缺失或格式錯誤：",
+        "back": "← 回品牌列表"
+      }
+    },
+    "soon": "（即將推出）"
+  },
   "theme": {
     "label": "切換主題"
   },
