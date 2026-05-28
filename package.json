@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "verify:db": "tsx --env-file=.env.local scripts/verify-db.ts"
+    "verify:db": "tsx --env-file=.env.local scripts/verify-db.ts",
+    "verify:core": "tsx --env-file=.env.local scripts/verify-core.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.84.1",

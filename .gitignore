@@ -55,6 +55,11 @@ yarn-error.log*
 Thumbs.db
 *.pem
 
+# Office / Word 暫時鎖檔
+~$*.docx
+~$*.xlsx
+~$*.pptx
+
 # Python
 __pycache__/
 *.pyc

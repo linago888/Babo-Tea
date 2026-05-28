@@ -1,8 +1,23 @@
 // Global Boba Graph — Prisma schema
 //
-// 完整資料模型定義見 ../../data-model.md。
-// Day 1 scaffold 階段：只放 generator / datasource 設定 + 一個健康檢查用 placeholder。
-// Day 3 起依 data-model.md §1-§8 逐步把所有 model 翻譯進來。
+// 完整資料模型定義見 ../data-model.md。本檔逐章對應如下：
+//   §1.1 brands       (Day 3)
+//   §1.2 cities       (Day 3)
+//   §1.3 drinks       (Day 3)
+//   §1.4 news         (Day 3)
+//   §5   sources      (Day 3)
+//   §4   taxonomies   (Day 3)
+//   §2   stores       (Day 5)
+//   §3   companies / brand_company  (Day 5)
+//   §7   metrics_daily (Day 6)
+//   §8   關聯表        (Day 4)
+//
+// 注意事項：
+// - 連線字串集中在 prisma.config.ts（Prisma 7 改動）
+// - i18n 欄位採 inline JSONB，shape 由應用層 Zod 驗證（見 data-model.md §6）
+// - Postgres enum 值用 snake_case；data-model.md 中的 kebab-case 值在
+//   app 層轉換（如 'milk-tea' → MILK_TEA）
+// - 所有 UUID 用 v4 (gen_random_uuid())；若要 v7 須加 extension
 
 generator client {
   provider        = "prisma-client"
@@ -12,15 +27,321 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // 連線字串在 prisma.config.ts（Prisma 7 改動：url / directUrl 不再寫在 schema）
-  // extensions = [pg_trgm, postgis] // Day 5 啟用：地理索引 + 模糊搜尋
+  // extensions = [pg_trgm, postgis] // Day 5 啟用
 }
 
-// Placeholder：Day 1 連線健康檢查用，Day 3 會被 data-model 取代
+// ─────────────────────────────────────────────────────────────
+// ENUMs
+// ─────────────────────────────────────────────────────────────
+
+/// 通用發佈狀態，所有可公開實體共用
+enum EntityStatus {
+  DRAFT     @map("draft")
+  PUBLISHED @map("published")
+  ARCHIVED  @map("archived")
+
+  @@map("entity_status")
+}
+
+/// brands.business_model
+enum BusinessModel {
+  DIRECT    @map("direct")
+  FRANCHISE @map("franchise")
+  HYBRID    @map("hybrid")
+  LICENSED  @map("licensed")
+
+  @@map("business_model")
+}
+
+/// brands.price_tier
+enum PriceTier {
+  VALUE   @map("value")
+  MID     @map("mid")
+  PREMIUM @map("premium")
+  LUXURY  @map("luxury")
+
+  @@map("price_tier")
+}
+
+/// cities.market_maturity（衍生指標，但欄位先 enum）
+enum MarketMaturity {
+  EMERGING  @map("emerging")
+  GROWING   @map("growing")
+  MATURE    @map("mature")
+  SATURATED @map("saturated")
+
+  @@map("market_maturity")
+}
+
+/// drinks.category
+enum DrinkCategory {
+  MILK_TEA   @map("milk_tea")
+  FRUIT_TEA  @map("fruit_tea")
+  PURE_TEA   @map("pure_tea")
+  CHEESE_TEA @map("cheese_tea")
+  COFFEE_TEA @map("coffee_tea")
+  SMOOTHIE   @map("smoothie")
+  OTHER      @map("other")
+
+  @@map("drink_category")
+}
+
+/// drinks.temperature[]
+enum DrinkTemperature {
+  HOT     @map("hot")
+  ICED    @map("iced")
+  BLENDED @map("blended")
+
+  @@map("drink_temperature")
+}
+
+/// news.category
+enum NewsCategory {
+  EXPANSION            @map("expansion")
+  LAUNCH               @map("launch")
+  FRANCHISE_INVESTMENT @map("franchise_investment")
+  CITY_MARKET          @map("city_market")
+  TREND                @map("trend")
+  SUPPLY_CHAIN         @map("supply_chain")
+  CULTURE              @map("culture")
+
+  @@map("news_category")
+}
+
+/// sources.kind
+enum SourceKind {
+  MAINSTREAM_MEDIA @map("mainstream_media")
+  TRADE_PRESS      @map("trade_press")
+  CORPORATE_PR     @map("corporate_pr")
+  BLOG             @map("blog")
+  SOCIAL           @map("social")
+  AGGREGATOR       @map("aggregator")
+
+  @@map("source_kind")
+}
+
+/// taxonomies.kind — 受控詞彙的分類
+enum TaxonomyKind {
+  TEA_BASE        @map("tea_base")
+  MILK_TYPE       @map("milk_type")
+  TOPPING         @map("topping")
+  SWEETENER       @map("sweetener")
+  FLAVOR_TAG      @map("flavor_tag")
+  POSITIONING_TAG @map("positioning_tag")
+
+  @@map("taxonomy_kind")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Day 1 baseline：保留 HealthCheck（Day 2 已落地，不影響）
+// ─────────────────────────────────────────────────────────────
+
 model HealthCheck {
+  // 保留 Day 1 schema 的 @default(uuid()) — Prisma 在 app 端生成 UUID 後送進去，
+  // 避免依賴 DB 端 default（Day 2 baseline SQL 沒有設 default gen_random_uuid()）。
   id        String   @id @default(uuid()) @db.Uuid
   note      String
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("health_check")
+}
+
+// ─────────────────────────────────────────────────────────────
+// §4 taxonomies — 受控詞彙（先建，其他表會引用）
+// ─────────────────────────────────────────────────────────────
+
+/// 統一受控詞彙表。各 kind 例如 tea_base / milk_type / topping ...
+/// label_i18n: { "zh-TW": "綠茶", "en": "Green tea", ... }
+model Taxonomy {
+  id        String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kind      TaxonomyKind
+  code      String /// e.g. 'green' for tea_base
+  labelI18n Json         @map("label_i18n")
+  parentId  String?      @map("parent_id") @db.Uuid
+  sortOrder Int          @default(0) @map("sort_order")
+  status    EntityStatus @default(PUBLISHED)
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  parent   Taxonomy?  @relation("TaxonomyHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children Taxonomy[] @relation("TaxonomyHierarchy")
+
+  @@unique([kind, code])
+  @@index([kind])
+  @@index([parentId])
+  @@map("taxonomies")
+}
+
+// ─────────────────────────────────────────────────────────────
+// §5 sources — 新聞來源
+// ─────────────────────────────────────────────────────────────
+
+/// 新聞來源實體（取代字串 source 欄位）
+model Source {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug             String       @unique
+  nameI18n         Json         @map("name_i18n")
+  domain           String       @unique /// e.g. 'nikkei.com'
+  countryCode      String?      @map("country_code") @db.Char(2)
+  primaryLanguage  String       @map("primary_language") /// BCP-47, e.g. 'ja', 'zh-TW'
+  kind             SourceKind
+  credibilityScore Int?         @map("credibility_score") /// 0-100
+  paywall          Boolean      @default(false)
+  notes            String?
+  status           EntityStatus @default(PUBLISHED)
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  news News[]
+
+  @@index([kind])
+  @@map("sources")
+}
+
+// ─────────────────────────────────────────────────────────────
+// §1.1 brands
+// ─────────────────────────────────────────────────────────────
+
+model Brand {
+  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug                String        @unique
+  nameI18n            Json          @map("name_i18n")
+  countryCode         String        @map("country_code") @db.Char(2)
+  foundedYear         Int?          @map("founded_year") @db.SmallInt
+  headquartersCityId  String?       @map("headquarters_city_id") @db.Uuid
+  storeCount          Int?          @map("store_count") /// 快取值，由 stores aggregate（Day 5 後）
+  businessModel       BusinessModel @map("business_model")
+  priceTier           PriceTier     @map("price_tier")
+  positioningTags     String[]      @default([]) @map("positioning_tags") /// taxonomy code，kind=positioning_tag
+  officialWebsite     String?       @map("official_website")
+  socialHandles       Json?         @map("social_handles") /// { instagram, tiktok, x, youtube, weibo, xiaohongshu }
+  logoUrl             String?       @map("logo_url")
+  heroImageUrl        String?       @map("hero_image_url")
+  descriptionI18n     Json?         @map("description_i18n")
+  seoI18n             Json?         @map("seo_i18n")
+  claimedByUserId     String?       @map("claimed_by_user_id") @db.Uuid /// v2 品牌認領
+  verified            Boolean       @default(false)
+  status              EntityStatus  @default(DRAFT)
+  // 內容品質欄位（data-model.md §9）
+  completenessScore   Int?          @map("completeness_score") /// 0-100，由 hook 自動算
+  lastHumanEditAt     DateTime?     @map("last_human_edit_at") @db.Timestamptz(6)
+  contentOwnerId      String?       @map("content_owner_id") @db.Uuid
+  reviewDueAt         DateTime?     @map("review_due_at") @db.Timestamptz(6)
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  headquartersCity City? @relation("BrandHeadquarters", fields: [headquartersCityId], references: [id], onDelete: SetNull)
+
+  @@index([countryCode])
+  @@index([status])
+  @@index([priceTier])
+  @@index([businessModel])
+  @@map("brands")
+}
+
+// ─────────────────────────────────────────────────────────────
+// §1.2 cities
+// ─────────────────────────────────────────────────────────────
+
+model City {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug              String          @unique
+  nameI18n          Json            @map("name_i18n")
+  countryCode       String          @map("country_code") @db.Char(2)
+  adminRegion       String?         @map("admin_region") /// 都/道/府/縣/省/州（i18n 暫時 free text）
+  lat               Decimal         @db.Decimal(9, 6)
+  lng               Decimal         @db.Decimal(9, 6)
+  timezone          String /// IANA tz, e.g. 'Asia/Tokyo'
+  population        Int?
+  avgPriceLocal     Decimal?        @map("avg_price_local") @db.Decimal(10, 2)
+  avgPriceCurrency  String?         @map("avg_price_currency") @db.Char(3)
+  marketMaturity    MarketMaturity? @map("market_maturity")
+  descriptionI18n   Json?           @map("description_i18n")
+  seoI18n           Json?           @map("seo_i18n")
+  status            EntityStatus    @default(DRAFT)
+  completenessScore Int?            @map("completeness_score")
+  lastHumanEditAt   DateTime?       @map("last_human_edit_at") @db.Timestamptz(6)
+  contentOwnerId    String?         @map("content_owner_id") @db.Uuid
+  reviewDueAt       DateTime?       @map("review_due_at") @db.Timestamptz(6)
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  brandsHeadquartered Brand[] @relation("BrandHeadquarters")
+
+  @@index([countryCode])
+  @@index([status])
+  @@index([marketMaturity])
+  @@map("cities")
+}
+
+// ─────────────────────────────────────────────────────────────
+// §1.3 drinks
+// ─────────────────────────────────────────────────────────────
+
+model Drink {
+  id                  String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug                String             @unique
+  nameI18n            Json               @map("name_i18n")
+  category            DrinkCategory
+  teaBase             String[]           @default([]) @map("tea_base") /// taxonomy codes, kind=tea_base
+  milkType            String?            @map("milk_type") /// single taxonomy code, kind=milk_type
+  toppings            String[]           @default([]) /// taxonomy codes, kind=topping
+  sweetener           String? /// taxonomy code, kind=sweetener
+  temperature         DrinkTemperature[] @default([])
+  typicalSugarLevels  Int[]              @default([]) @map("typical_sugar_levels") /// 0, 30, 50, 70, 100
+  caloriesKcalMin     Int?               @map("calories_kcal_min") @db.SmallInt
+  caloriesKcalMax     Int?               @map("calories_kcal_max") @db.SmallInt
+  caffeineMgMin       Int?               @map("caffeine_mg_min") @db.SmallInt
+  caffeineMgMax       Int?               @map("caffeine_mg_max") @db.SmallInt
+  flavorProfile       Json?              @map("flavor_profile") /// { sweet:0-5, bitter:0-5, milky:0-5, fruity:0-5, floral:0-5, roasted:0-5 }
+  descriptionI18n     Json?              @map("description_i18n")
+  seoI18n             Json?              @map("seo_i18n")
+  status              EntityStatus       @default(DRAFT)
+  completenessScore   Int?               @map("completeness_score")
+  lastHumanEditAt     DateTime?          @map("last_human_edit_at") @db.Timestamptz(6)
+  contentOwnerId      String?            @map("content_owner_id") @db.Uuid
+  reviewDueAt         DateTime?          @map("review_due_at") @db.Timestamptz(6)
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([category])
+  @@index([status])
+  @@map("drinks")
+}
+
+// ─────────────────────────────────────────────────────────────
+// §1.4 news
+// ─────────────────────────────────────────────────────────────
+
+model News {
+  id                    String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug                  String       @unique
+  titleI18n             Json         @map("title_i18n")
+  summaryI18n           Json         @map("summary_i18n") /// 編輯撰寫的人類摘要
+  bodyI18n              Json         @map("body_i18n") /// markdown per locale
+  aiSummaryI18n         Json?        @map("ai_summary_i18n") /// AI 草稿
+  aiSummaryReviewedBy   String?      @map("ai_summary_reviewed_by") @db.Uuid /// NULL = 未審 = 不對外顯示
+  aiSummaryReviewedAt   DateTime?    @map("ai_summary_reviewed_at") @db.Timestamptz(6)
+  category              NewsCategory
+  sourceId              String       @map("source_id") @db.Uuid
+  sourceUrl             String       @map("source_url")
+  publishedAt           DateTime     @map("published_at") @db.Timestamptz(6)
+  heroImageUrl          String?      @map("hero_image_url")
+  editorTags            String[]     @default([]) @map("editor_tags")
+  seoI18n               Json?        @map("seo_i18n")
+  status                EntityStatus @default(DRAFT)
+  completenessScore     Int?         @map("completeness_score")
+  lastHumanEditAt       DateTime?    @map("last_human_edit_at") @db.Timestamptz(6)
+  contentOwnerId        String?      @map("content_owner_id") @db.Uuid
+  reviewDueAt           DateTime?    @map("review_due_at") @db.Timestamptz(6)
+  createdAt             DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  source Source @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+
+  @@index([sourceId])
+  @@index([category])
+  @@index([status])
+  @@index([publishedAt(sort: Desc)])
+  @@map("news")
 }
