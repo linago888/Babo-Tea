@@ -7,6 +7,8 @@ import { useState } from "react";
 
 import { routing, type Locale } from "@/i18n/routing";
 
+import AiDraftButton from "./ai-draft-button";
+
 type DrinkCategory =
   | "MILK_TEA"
   | "FRUIT_TEA"
@@ -83,6 +85,30 @@ function buildInitial(initial: DrinkFormInitial): DrinkFormValues {
     flavorProfileText: initial.flavorProfileText ?? "",
     status: (initial.status as DrinkFormValues["status"]) ?? "DRAFT",
   };
+}
+
+function buildDrinkContext(v: DrinkFormValues): string {
+  const lines: string[] = [];
+  lines.push(`Slug: ${v.slug || "(none)"}`);
+  const anyName = Object.entries(v.nameI18n).find(([, val]) => val.trim())?.[1];
+  if (anyName) lines.push(`Drink name: ${anyName}`);
+  lines.push(`Category: ${v.category}`);
+  if (v.teaBase.trim()) lines.push(`Tea base: ${v.teaBase}`);
+  if (v.milkType) lines.push(`Milk: ${v.milkType}`);
+  if (v.toppings.trim()) lines.push(`Toppings: ${v.toppings}`);
+  if (v.sweetener) lines.push(`Sweetener: ${v.sweetener}`);
+  if (v.temperature.length > 0) lines.push(`Available temperatures: ${v.temperature.join(", ")}`);
+  if (v.typicalSugarLevels.trim()) lines.push(`Typical sugar levels: ${v.typicalSugarLevels}%`);
+  if (v.caloriesKcalMin || v.caloriesKcalMax) {
+    lines.push(`Calories range: ${v.caloriesKcalMin || "?"}–${v.caloriesKcalMax || "?"} kcal`);
+  }
+  if (v.caffeineMgMin || v.caffeineMgMax) {
+    lines.push(`Caffeine range: ${v.caffeineMgMin || "?"}–${v.caffeineMgMax || "?"} mg`);
+  }
+  if (v.flavorProfileText.trim()) lines.push(`Flavor profile: ${v.flavorProfileText}`);
+  const anyDesc = Object.entries(v.descriptionI18n).find(([, val]) => val.trim());
+  if (anyDesc) lines.push(`Existing description (${anyDesc[0]}): ${anyDesc[1]}`);
+  return lines.join("\n");
 }
 
 export default function DrinkForm({
@@ -476,43 +502,54 @@ export default function DrinkForm({
 
       {tab === "i18n" ? (
         <div className="space-y-4">
-          <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+          <div className="flex items-end justify-between gap-2">
+            <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+            <AiDraftButton
+              instruction="Write a 60-100 word description of this bubble tea drink. Cover the flavour, mouthfeel, signature ingredients. Useful for someone deciding whether to order it."
+              fields={["text"]}
+              getContext={() => buildDrinkContext(values)}
+              onApply={(drafts) => {
+                const localeDrafts = drafts.text ?? {};
+                setValues((v) => ({ ...v, descriptionI18n: { ...v.descriptionI18n, ...localeDrafts } }));
+              }}
+              label="AI 補完 4 個 locale"
+            />
+          </div>
           <Field
             label={`${tFields("nameI18n")} (${localeTab})`}
             hint={localeTab === routing.defaultLocale ? "Required for default locale" : undefined}
           >
-            <input
-              type="text"
-              value={values.nameI18n[localeTab] ?? ""}
-              onChange={(e) =>
-                setValues((v) => ({
-                  ...v,
-                  nameI18n: { ...v.nameI18n, [localeTab]: e.target.value },
-                }))
-              }
-              required={localeTab === routing.defaultLocale}
-              className={inputClass}
-            />
+            <input type="text" value={values.nameI18n[localeTab] ?? ""} onChange={(e) => setValues((v) => ({ ...v, nameI18n: { ...v.nameI18n, [localeTab]: e.target.value } }))} required={localeTab === routing.defaultLocale} className={inputClass} />
           </Field>
           <Field label={`${tFields("descriptionI18n")} (${localeTab})`}>
-            <textarea
-              rows={6}
-              value={values.descriptionI18n[localeTab] ?? ""}
-              onChange={(e) =>
-                setValues((v) => ({
-                  ...v,
-                  descriptionI18n: { ...v.descriptionI18n, [localeTab]: e.target.value },
-                }))
-              }
-              className={`${inputClass} resize-y`}
-            />
+            <textarea rows={6} value={values.descriptionI18n[localeTab] ?? ""} onChange={(e) => setValues((v) => ({ ...v, descriptionI18n: { ...v.descriptionI18n, [localeTab]: e.target.value } }))} className={`${inputClass} resize-y`} />
           </Field>
         </div>
       ) : null}
 
       {tab === "seo" ? (
         <div className="space-y-4">
-          <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+          <div className="flex items-end justify-between gap-2">
+            <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+            <AiDraftButton
+              instruction="Generate SEO meta title (50-60 chars) and description (140-160 chars) for this bubble tea drink encyclopedia page."
+              fields={["title", "description"]}
+              maxChars={{ title: 60, description: 160 }}
+              getContext={() => buildDrinkContext(values)}
+              onApply={(drafts) => {
+                setValues((v) => {
+                  const newSeo: Record<string, { title?: string; description?: string }> = { ...v.seoI18n };
+                  for (const lc of routing.locales) {
+                    const title = drafts.title?.[lc];
+                    const description = drafts.description?.[lc];
+                    newSeo[lc] = { ...(newSeo[lc] ?? {}), ...(title !== undefined ? { title } : {}), ...(description !== undefined ? { description } : {}) };
+                  }
+                  return { ...v, seoI18n: newSeo };
+                });
+              }}
+              label="AI 補完 SEO"
+            />
+          </div>
           <Field label={`${tFields("seoTitle")} (${localeTab})`}>
             <input
               type="text"

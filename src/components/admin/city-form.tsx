@@ -7,6 +7,8 @@ import { useState } from "react";
 
 import { routing, type Locale } from "@/i18n/routing";
 
+import AiDraftButton from "./ai-draft-button";
+
 type SeoPerLocale = { title?: string; description?: string };
 
 type CityFormValues = {
@@ -64,6 +66,24 @@ function buildInitial(initial: CityFormInitial): CityFormValues {
     marketMaturity: (initial.marketMaturity as CityFormValues["marketMaturity"]) ?? "",
     status: (initial.status as CityFormValues["status"]) ?? "DRAFT",
   };
+}
+
+function buildCityContext(v: CityFormValues): string {
+  const lines: string[] = [];
+  lines.push(`Slug: ${v.slug || "(none)"}`);
+  const anyName = Object.entries(v.nameI18n).find(([, val]) => val.trim())?.[1];
+  if (anyName) lines.push(`City name: ${anyName}`);
+  if (v.countryCode) lines.push(`Country: ${v.countryCode}`);
+  if (v.adminRegion) lines.push(`Admin region: ${v.adminRegion}`);
+  if (v.timezone) lines.push(`Timezone: ${v.timezone}`);
+  if (v.population) lines.push(`Population: ${v.population}`);
+  if (v.avgPriceLocal && v.avgPriceCurrency) {
+    lines.push(`Average cup price: ${v.avgPriceLocal} ${v.avgPriceCurrency}`);
+  }
+  if (v.marketMaturity) lines.push(`Bubble tea market maturity: ${v.marketMaturity}`);
+  const anyDesc = Object.entries(v.descriptionI18n).find(([, val]) => val.trim());
+  if (anyDesc) lines.push(`Existing description (${anyDesc[0]}): ${anyDesc[1]}`);
+  return lines.join("\n");
 }
 
 export default function CityForm({
@@ -390,43 +410,54 @@ export default function CityForm({
 
       {tab === "i18n" ? (
         <div className="space-y-4">
-          <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+          <div className="flex items-end justify-between gap-2">
+            <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+            <AiDraftButton
+              instruction="Write a 70-110 word description of this city's bubble tea scene. Focus on local drinking culture, notable brands or trends, neighborhoods where shops cluster. Be factual; do not invent specific numbers."
+              fields={["text"]}
+              getContext={() => buildCityContext(values)}
+              onApply={(drafts) => {
+                const localeDrafts = drafts.text ?? {};
+                setValues((v) => ({ ...v, descriptionI18n: { ...v.descriptionI18n, ...localeDrafts } }));
+              }}
+              label="AI 補完 4 個 locale"
+            />
+          </div>
           <Field
             label={`${tFields("nameI18n")} (${localeTab})`}
             hint={localeTab === routing.defaultLocale ? "Required for default locale" : undefined}
           >
-            <input
-              type="text"
-              value={values.nameI18n[localeTab] ?? ""}
-              onChange={(e) =>
-                setValues((v) => ({
-                  ...v,
-                  nameI18n: { ...v.nameI18n, [localeTab]: e.target.value },
-                }))
-              }
-              required={localeTab === routing.defaultLocale}
-              className={inputClass}
-            />
+            <input type="text" value={values.nameI18n[localeTab] ?? ""} onChange={(e) => setValues((v) => ({ ...v, nameI18n: { ...v.nameI18n, [localeTab]: e.target.value } }))} required={localeTab === routing.defaultLocale} className={inputClass} />
           </Field>
           <Field label={`${tFields("descriptionI18n")} (${localeTab})`}>
-            <textarea
-              rows={6}
-              value={values.descriptionI18n[localeTab] ?? ""}
-              onChange={(e) =>
-                setValues((v) => ({
-                  ...v,
-                  descriptionI18n: { ...v.descriptionI18n, [localeTab]: e.target.value },
-                }))
-              }
-              className={`${inputClass} resize-y`}
-            />
+            <textarea rows={6} value={values.descriptionI18n[localeTab] ?? ""} onChange={(e) => setValues((v) => ({ ...v, descriptionI18n: { ...v.descriptionI18n, [localeTab]: e.target.value } }))} className={`${inputClass} resize-y`} />
           </Field>
         </div>
       ) : null}
 
       {tab === "seo" ? (
         <div className="space-y-4">
-          <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+          <div className="flex items-end justify-between gap-2">
+            <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+            <AiDraftButton
+              instruction="Generate SEO meta title (50-60 chars) and description (140-160 chars) for this city's bubble tea scene page."
+              fields={["title", "description"]}
+              maxChars={{ title: 60, description: 160 }}
+              getContext={() => buildCityContext(values)}
+              onApply={(drafts) => {
+                setValues((v) => {
+                  const newSeo: Record<string, { title?: string; description?: string }> = { ...v.seoI18n };
+                  for (const lc of routing.locales) {
+                    const title = drafts.title?.[lc];
+                    const description = drafts.description?.[lc];
+                    newSeo[lc] = { ...(newSeo[lc] ?? {}), ...(title !== undefined ? { title } : {}), ...(description !== undefined ? { description } : {}) };
+                  }
+                  return { ...v, seoI18n: newSeo };
+                });
+              }}
+              label="AI 補完 SEO"
+            />
+          </div>
           <Field label={`${tFields("seoTitle")} (${localeTab})`}>
             <input
               type="text"

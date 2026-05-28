@@ -7,6 +7,9 @@ import { useState } from "react";
 
 import { routing, type Locale } from "@/i18n/routing";
 
+import AiDraftButton from "./ai-draft-button";
+import ImageUploadField from "./image-upload-field";
+
 type SeoPerLocale = { title?: string; description?: string; faq?: unknown };
 
 type BrandCityStatus = "ACTIVE" | "EXITED" | "RUMORED";
@@ -121,6 +124,24 @@ function buildInitial(initial: BrandFormInitial): BrandFormValues {
     cities: initial.cities ?? [],
     companies: initial.companies ?? [],
   };
+}
+
+// AI 草稿生成用 — 組裝品牌目前的所有事實供 LLM 參考
+function buildBrandContext(v: BrandFormValues): string {
+  const lines: string[] = [];
+  lines.push(`Slug: ${v.slug || "(none)"}`);
+  const anyName = Object.entries(v.nameI18n).find(([, val]) => val.trim())?.[1];
+  if (anyName) lines.push(`Brand name: ${anyName}`);
+  if (v.countryCode) lines.push(`Country: ${v.countryCode}`);
+  if (v.foundedYear) lines.push(`Founded year: ${v.foundedYear}`);
+  lines.push(`Business model: ${v.businessModel}`);
+  lines.push(`Price tier: ${v.priceTier}`);
+  if (v.positioningTags.trim()) lines.push(`Positioning tags: ${v.positioningTags}`);
+  if (v.officialWebsite) lines.push(`Official website: ${v.officialWebsite}`);
+  // existing description (any locale) for tone reference
+  const anyDesc = Object.entries(v.descriptionI18n).find(([, val]) => val.trim());
+  if (anyDesc) lines.push(`Existing description (${anyDesc[0]}): ${anyDesc[1]}`);
+  return lines.join("\n");
 }
 
 export default function BrandForm({
@@ -458,7 +479,7 @@ export default function BrandForm({
             <input type="url" value={values.officialWebsite} onChange={(e) => update("officialWebsite", e.target.value)} placeholder="https://example.com" className={inputClass} />
           </Field>
           <Field label={tFields("logoUrl")}>
-            <input type="url" value={values.logoUrl} onChange={(e) => update("logoUrl", e.target.value)} placeholder="https://…/logo.png" className={inputClass} />
+            <ImageUploadField value={values.logoUrl} onChange={(url) => update("logoUrl", url)} prefix="brands/logos" placeholder="https://…/logo.png" />
           </Field>
           <Field label={tFields("positioningTags")} hint={tFields("positioningHint")}>
             <input type="text" value={values.positioningTags} onChange={(e) => update("positioningTags", e.target.value)} placeholder="fruit-tea, premium" className={inputClass} />
@@ -477,16 +498,58 @@ export default function BrandForm({
           <Field label={`${tFields("nameI18n")} (${localeTab})`} hint={localeTab === routing.defaultLocale ? "Required for default locale" : undefined}>
             <input type="text" value={values.nameI18n[localeTab] ?? ""} onChange={(e) => setValues((v) => ({ ...v, nameI18n: { ...v.nameI18n, [localeTab]: e.target.value } }))} required={localeTab === routing.defaultLocale} className={inputClass} />
           </Field>
-          <Field label={`${tFields("descriptionI18n")} (${localeTab})`}>
+          <div>
+            <div className="mb-1 flex items-end justify-between gap-2">
+              <span className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                {`${tFields("descriptionI18n")} (${localeTab})`}
+              </span>
+              <AiDraftButton
+                instruction="Write a 60-100 word brand description summarising what makes this bubble tea brand notable. Focus on origin, signature style, market position. No hype, no fake numbers."
+                fields={["text"]}
+                getContext={() => buildBrandContext(values)}
+                onApply={(drafts) => {
+                  const localeDrafts = drafts.text ?? {};
+                  setValues((v) => ({
+                    ...v,
+                    descriptionI18n: { ...v.descriptionI18n, ...localeDrafts },
+                  }));
+                }}
+                label="AI 補完 4 個 locale"
+              />
+            </div>
             <textarea rows={6} value={values.descriptionI18n[localeTab] ?? ""} onChange={(e) => setValues((v) => ({ ...v, descriptionI18n: { ...v.descriptionI18n, [localeTab]: e.target.value } }))} className={`${inputClass} resize-y`} />
-          </Field>
+          </div>
         </div>
       ) : null}
 
       {/* SEO */}
       {tab === "seo" ? (
         <div className="space-y-4">
-          <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+          <div className="flex items-end justify-between gap-2">
+            <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+            <AiDraftButton
+              instruction="Generate SEO meta title and description for this brand. Title 50-60 chars (under hard limit), descriptive and clickable. Description 140-160 chars, summarising the brand."
+              fields={["title", "description"]}
+              maxChars={{ title: 60, description: 160 }}
+              getContext={() => buildBrandContext(values)}
+              onApply={(drafts) => {
+                setValues((v) => {
+                  const newSeo: Record<string, { title?: string; description?: string; faq?: unknown }> = { ...v.seoI18n };
+                  for (const lc of routing.locales) {
+                    const title = drafts.title?.[lc];
+                    const description = drafts.description?.[lc];
+                    newSeo[lc] = {
+                      ...(newSeo[lc] ?? {}),
+                      ...(title !== undefined ? { title } : {}),
+                      ...(description !== undefined ? { description } : {}),
+                    };
+                  }
+                  return { ...v, seoI18n: newSeo };
+                });
+              }}
+              label="AI 補完 SEO"
+            />
+          </div>
           <Field label={`${tFields("seoTitle")} (${localeTab})`}>
             <input type="text" value={(values.seoI18n[localeTab]?.title as string) ?? ""} onChange={(e) => setValues((v) => ({ ...v, seoI18n: { ...v.seoI18n, [localeTab]: { ...(v.seoI18n[localeTab] ?? {}), title: e.target.value } } }))} maxLength={120} className={inputClass} />
           </Field>

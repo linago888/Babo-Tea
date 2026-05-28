@@ -7,6 +7,9 @@ import { useState } from "react";
 
 import { routing, type Locale } from "@/i18n/routing";
 
+import AiDraftButton from "./ai-draft-button";
+import ImageUploadField from "./image-upload-field";
+
 type NewsCategory =
   | "EXPANSION"
   | "LAUNCH"
@@ -102,6 +105,26 @@ function buildInitial(initial: NewsFormInitial): NewsFormValues {
     relatedCities: initial.relatedCities ?? [],
     relatedDrinks: initial.relatedDrinks ?? [],
   };
+}
+
+function buildNewsContext(v: NewsFormValues): string {
+  const lines: string[] = [];
+  lines.push(`Slug: ${v.slug || "(none)"}`);
+  const anyTitle = Object.entries(v.titleI18n).find(([, val]) => val.trim());
+  if (anyTitle) lines.push(`Title (${anyTitle[0]}): ${anyTitle[1]}`);
+  lines.push(`Category: ${v.category}`);
+  if (v.publishedAt) lines.push(`Published at: ${v.publishedAt}`);
+  if (v.sourceUrl) lines.push(`Original source URL: ${v.sourceUrl}`);
+  if (v.editorTags.trim()) lines.push(`Editor tags: ${v.editorTags}`);
+  const anySummary = Object.entries(v.summaryI18n).find(([, val]) => val.trim());
+  if (anySummary) lines.push(`Existing summary (${anySummary[0]}): ${anySummary[1]}`);
+  const anyBody = Object.entries(v.bodyI18n).find(([, val]) => val.trim());
+  if (anyBody) {
+    // body 可能很長，截短
+    const snippet = anyBody[1].slice(0, 800);
+    lines.push(`Existing body (${anyBody[0]}, may be truncated):\n${snippet}`);
+  }
+  return lines.join("\n");
 }
 
 export default function NewsForm({
@@ -329,7 +352,7 @@ export default function NewsForm({
             <input type="datetime-local" required value={values.publishedAt} onChange={(e) => update("publishedAt", e.target.value)} className={inputClass} />
           </Field>
           <Field label={tFields("heroImageUrl")}>
-            <input type="url" value={values.heroImageUrl} onChange={(e) => update("heroImageUrl", e.target.value)} className={inputClass} />
+            <ImageUploadField value={values.heroImageUrl} onChange={(url) => update("heroImageUrl", url)} prefix="news/hero" />
           </Field>
           <Field label={tFields("editorTags")} hint={tFields("editorTagsHint")}>
             <input type="text" value={values.editorTags} onChange={(e) => update("editorTags", e.target.value)} placeholder="opening, premium, asia" className={inputClass} />
@@ -340,7 +363,31 @@ export default function NewsForm({
       {/* i18n */}
       {tab === "i18n" ? (
         <div className="space-y-4">
-          <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+          <div className="flex items-end justify-between gap-2">
+            <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+            <div className="flex gap-2">
+              <AiDraftButton
+                instruction="Write a 2-sentence (40-60 word) editorial summary of this news article. Highlight WHO, WHAT, WHERE, WHEN. Factual, no hype."
+                fields={["text"]}
+                getContext={() => buildNewsContext(values)}
+                onApply={(drafts) => {
+                  const localeDrafts = drafts.text ?? {};
+                  setValues((v) => ({ ...v, summaryI18n: { ...v.summaryI18n, ...localeDrafts } }));
+                }}
+                label="AI 補完 摘要"
+              />
+              <AiDraftButton
+                instruction="Write the full news body in Markdown. 3-5 paragraphs. Lead paragraph: who/what/where/when. Body: context, quotes if available, business implication. Use ## for section subheadings if useful. Do NOT invent quotes or numbers not in the context."
+                fields={["text"]}
+                getContext={() => buildNewsContext(values)}
+                onApply={(drafts) => {
+                  const localeDrafts = drafts.text ?? {};
+                  setValues((v) => ({ ...v, bodyI18n: { ...v.bodyI18n, ...localeDrafts } }));
+                }}
+                label="AI 補完 本文"
+              />
+            </div>
+          </div>
           <Field label={`${tFields("titleI18n")} (${localeTab})`} hint={localeTab === routing.defaultLocale ? "Required for default locale" : undefined}>
             <input type="text" value={values.titleI18n[localeTab] ?? ""} onChange={(e) => setValues((v) => ({ ...v, titleI18n: { ...v.titleI18n, [localeTab]: e.target.value } }))} required={localeTab === routing.defaultLocale} className={inputClass} />
           </Field>
@@ -356,7 +403,27 @@ export default function NewsForm({
       {/* SEO */}
       {tab === "seo" ? (
         <div className="space-y-4">
-          <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+          <div className="flex items-end justify-between gap-2">
+            <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+            <AiDraftButton
+              instruction="Generate SEO meta title (50-60 chars, news-style) and description (140-160 chars) for this news article."
+              fields={["title", "description"]}
+              maxChars={{ title: 60, description: 160 }}
+              getContext={() => buildNewsContext(values)}
+              onApply={(drafts) => {
+                setValues((v) => {
+                  const newSeo: Record<string, { title?: string; description?: string }> = { ...v.seoI18n };
+                  for (const lc of routing.locales) {
+                    const title = drafts.title?.[lc];
+                    const description = drafts.description?.[lc];
+                    newSeo[lc] = { ...(newSeo[lc] ?? {}), ...(title !== undefined ? { title } : {}), ...(description !== undefined ? { description } : {}) };
+                  }
+                  return { ...v, seoI18n: newSeo };
+                });
+              }}
+              label="AI 補完 SEO"
+            />
+          </div>
           <Field label={`${tFields("seoTitle")} (${localeTab})`}>
             <input type="text" value={(values.seoI18n[localeTab]?.title as string) ?? ""} onChange={(e) => setValues((v) => ({ ...v, seoI18n: { ...v.seoI18n, [localeTab]: { ...(v.seoI18n[localeTab] ?? {}), title: e.target.value } } }))} maxLength={120} className={inputClass} />
           </Field>
@@ -369,7 +436,19 @@ export default function NewsForm({
       {/* Advanced (AI summary) */}
       {tab === "advanced" ? (
         <div className="space-y-4">
-          <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+          <div className="flex items-end justify-between gap-2">
+            <LocaleTabs locales={locales} active={localeTab} onChange={setLocaleTab} />
+            <AiDraftButton
+              instruction="Generate a short auto-summary (30-50 words) for this news article. Plain text, neutral tone, summarising the key fact."
+              fields={["text"]}
+              getContext={() => buildNewsContext(values)}
+              onApply={(drafts) => {
+                const localeDrafts = drafts.text ?? {};
+                setValues((v) => ({ ...v, aiSummaryI18n: { ...v.aiSummaryI18n, ...localeDrafts } }));
+              }}
+              label="AI 生成草稿"
+            />
+          </div>
           <Field label={`${tFields("aiSummary")} (${localeTab})`} hint={tFields("aiSummaryHint")}>
             <textarea rows={6} value={values.aiSummaryI18n[localeTab] ?? ""} onChange={(e) => setValues((v) => ({ ...v, aiSummaryI18n: { ...v.aiSummaryI18n, [localeTab]: e.target.value } }))} className={`${inputClass} resize-y`} />
           </Field>
