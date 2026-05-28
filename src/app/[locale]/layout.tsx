@@ -5,6 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Noto_Sans_JP, Noto_Sans_SC, Noto_Sans_TC } from "next/font/google";
 import { notFound } from "next/navigation";
 
+import { SiteHeader } from "@/components/site-header";
 import { type Locale, localeMetadata, routing } from "@/i18n/routing";
 import { buildPageMetadata } from "@/lib/metadata";
 
@@ -85,8 +86,11 @@ export default async function LocaleLayout({
       dir={meta.direction}
       className={`${fontClasses} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+      <body className="min-h-full flex flex-col bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
+        <NextIntlClientProvider>
+          <SiteHeader locale={locale as Locale} />
+          <div className="flex flex-1 flex-col">{children}</div>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

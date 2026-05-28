@@ -4,10 +4,48 @@
     "tagline": "Global bubble tea knowledge & industry media",
     "description": "Discover bubble tea brands, cities, drinks and industry news from around the world. Structured, searchable, and built for both enthusiasts and the trade."
   },
+  "nav": {
+    "brands": "Brands",
+    "cities": "Cities",
+    "drinks": "Drinks",
+    "news": "News"
+  },
   "home": {
     "headline": "A structured data platform for bubble tea brands, cities, drinks and news worldwide.",
     "lede": "Starting as an SEO content database, growing into a knowledge graph, AI search and industry intelligence product.",
-    "scaffold_note": "Day 1 scaffold complete. Next: model the data-model.md schema and seed a vertical slice."
+    "explore_brands": "Explore brands",
+    "explore_cities": "Explore cities",
+    "explore_drinks": "Explore drinks"
+  },
+  "brandList": {
+    "title": "Brands",
+    "subtitle": "{count} bubble tea brands tracked worldwide",
+    "filter": {
+      "country": "Country",
+      "tier": "Price tier",
+      "model": "Business model",
+      "all": "All",
+      "clear": "Clear filters"
+    },
+    "tier": {
+      "value": "Value",
+      "mid": "Mid",
+      "premium": "Premium",
+      "luxury": "Luxury"
+    },
+    "model": {
+      "direct": "Direct",
+      "franchise": "Franchise",
+      "hybrid": "Hybrid",
+      "licensed": "Licensed"
+    },
+    "empty": "No brands match these filters."
+  },
+  "brandCard": {
+    "founded": "Founded {year}",
+    "stores": "{count, plural, =0 {No stores tracked} one {1 store} other {# stores}}",
+    "signatureDrinks": "Signature drinks",
+    "viewBrand": "View brand"
   },
   "languageSwitcher": {
     "label": "Language",

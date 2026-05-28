@@ -4,10 +4,48 @@
     "tagline": "全球珍奶知識與產業媒體",
     "description": "探索全球珍珠奶茶品牌、城市指南、飲品百科與產業新聞。結構化、可搜尋，同時服務一般愛好者與產業讀者。"
   },
+  "nav": {
+    "brands": "品牌",
+    "cities": "城市",
+    "drinks": "飲品",
+    "news": "新聞"
+  },
   "home": {
     "headline": "全球珍珠奶茶品牌、城市、飲品與新聞的結構化資料平台",
     "lede": "以 SEO 內容資料庫起步，逐步擴充成知識圖譜、AI 搜尋與產業情報產品。",
-    "scaffold_note": "Day 1 scaffold 完成。下一步：依 data-model.md 建表並 seed vertical slice。"
+    "explore_brands": "瀏覽品牌",
+    "explore_cities": "瀏覽城市",
+    "explore_drinks": "瀏覽飲品"
+  },
+  "brandList": {
+    "title": "品牌",
+    "subtitle": "全球追蹤中的 {count} 個珍奶品牌",
+    "filter": {
+      "country": "國家",
+      "tier": "價格帶",
+      "model": "經營模式",
+      "all": "全部",
+      "clear": "清除篩選"
+    },
+    "tier": {
+      "value": "親民",
+      "mid": "中價位",
+      "premium": "精品",
+      "luxury": "高端"
+    },
+    "model": {
+      "direct": "直營",
+      "franchise": "加盟",
+      "hybrid": "混合",
+      "licensed": "授權"
+    },
+    "empty": "沒有符合條件的品牌。"
+  },
+  "brandCard": {
+    "founded": "成立於 {year}",
+    "stores": "{count, plural, =0 {尚無門店資料} other {# 家門店}}",
+    "signatureDrinks": "招牌飲品",
+    "viewBrand": "查看品牌"
   },
   "languageSwitcher": {
     "label": "語言",

@@ -1,6 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-
-import { LanguageSwitcher } from "@/components/language-switcher";
+import Link from "next/link";
 
 export default async function HomePage({
   params,
@@ -22,10 +21,26 @@ export default async function HomePage({
       <p className="text-lg text-neutral-600 dark:text-neutral-400">
         {t("home.lede")}
       </p>
-      <p className="rounded-lg border border-dashed border-neutral-300 bg-neutral-50 px-4 py-3 text-sm text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
-        {t("home.scaffold_note")}
-      </p>
-      <LanguageSwitcher />
+      <div className="flex flex-wrap gap-3 pt-2">
+        <Link
+          href={`/${locale}/brands`}
+          className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
+        >
+          {t("home.explore_brands")} →
+        </Link>
+        <Link
+          href={`/${locale}/cities`}
+          className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-500 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500 dark:hover:text-neutral-100"
+        >
+          {t("home.explore_cities")}
+        </Link>
+        <Link
+          href={`/${locale}/drinks`}
+          className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-500 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-neutral-500 dark:hover:text-neutral-100"
+        >
+          {t("home.explore_drinks")}
+        </Link>
+      </div>
     </main>
   );
 }

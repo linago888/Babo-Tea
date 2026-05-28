@@ -4,10 +4,48 @@
     "tagline": "世界のタピオカ・ナレッジ＆業界メディア",
     "description": "世界中のタピオカブランド・都市ガイド・ドリンク事典・業界ニュースを構造化して提供。一般ファンと業界読者の両方に。"
   },
+  "nav": {
+    "brands": "ブランド",
+    "cities": "都市",
+    "drinks": "ドリンク",
+    "news": "ニュース"
+  },
   "home": {
     "headline": "世界中のタピオカブランド・都市・ドリンク・ニュースの構造化データプラットフォーム。",
     "lede": "SEO コンテンツデータベースから始め、ナレッジグラフ、AI 検索、業界インテリジェンス製品へと拡張します。",
-    "scaffold_note": "Day 1 scaffold 完了。次は data-model.md に従ってスキーマを実装し、vertical slice を seed します。"
+    "explore_brands": "ブランドを見る",
+    "explore_cities": "都市を見る",
+    "explore_drinks": "ドリンクを見る"
+  },
+  "brandList": {
+    "title": "ブランド",
+    "subtitle": "世界中で追跡中のタピオカブランド {count} 件",
+    "filter": {
+      "country": "国",
+      "tier": "価格帯",
+      "model": "経営形態",
+      "all": "すべて",
+      "clear": "フィルターをクリア"
+    },
+    "tier": {
+      "value": "コスパ",
+      "mid": "中価格",
+      "premium": "プレミアム",
+      "luxury": "ハイエンド"
+    },
+    "model": {
+      "direct": "直営",
+      "franchise": "フランチャイズ",
+      "hybrid": "ハイブリッド",
+      "licensed": "ライセンス"
+    },
+    "empty": "条件に合致するブランドがありません。"
+  },
+  "brandCard": {
+    "founded": "{year} 年創業",
+    "stores": "{count, plural, =0 {店舗データなし} other {店舗 # 件}}",
+    "signatureDrinks": "看板メニュー",
+    "viewBrand": "ブランドを見る"
   },
   "languageSwitcher": {
     "label": "言語",
