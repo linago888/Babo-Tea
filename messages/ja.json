@@ -279,5 +279,20 @@
   "languageSwitcher": {
     "label": "言語",
     "current": "現在の言語"
+  },
+  "footer": {
+    "tagline": "世界のタピオカブランド・都市・ドリンク・ニュースの構造化データ。",
+    "browse": "閲覧",
+    "resources": "リソース",
+    "rss": "RSS フィード",
+    "sitemap": "サイトマップ",
+    "legal": "情報",
+    "about": "サイトについて",
+    "spec": "サイト仕様",
+    "datamodel": "データモデル",
+    "copyright": "© {year} Global Boba Graph。開発段階のデモコンテンツ。"
+  },
+  "theme": {
+    "label": "テーマ切替"
   }
 }

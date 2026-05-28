@@ -279,5 +279,20 @@
   "languageSwitcher": {
     "label": "语言",
     "current": "当前语言"
+  },
+  "footer": {
+    "tagline": "全球珍奶品牌、城市、饮品与新闻的结构化数据。",
+    "browse": "浏览",
+    "resources": "资源",
+    "rss": "RSS 订阅",
+    "sitemap": "网站地图",
+    "legal": "说明",
+    "about": "关于我们",
+    "spec": "网站规格",
+    "datamodel": "数据模型",
+    "copyright": "© {year} Global Boba Graph。开发阶段示范内容。"
+  },
+  "theme": {
+    "label": "切换主题"
   }
 }

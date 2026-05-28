@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { Locale } from "@/i18n/routing";
 
 const NAV_ITEMS = [
@@ -41,8 +42,9 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
           ))}
         </nav>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
           <LanguageSwitcher />
+          <ThemeToggle />
         </div>
       </div>
 

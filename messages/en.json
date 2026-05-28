@@ -279,5 +279,20 @@
   "languageSwitcher": {
     "label": "Language",
     "current": "Current language"
+  },
+  "footer": {
+    "tagline": "Structured data on global bubble tea brands, cities, drinks and news.",
+    "browse": "Browse",
+    "resources": "Resources",
+    "rss": "RSS feed",
+    "sitemap": "Sitemap",
+    "legal": "Legal",
+    "about": "About",
+    "spec": "Specification",
+    "datamodel": "Data model",
+    "copyright": "© {year} Global Boba Graph. Demo content for development."
+  },
+  "theme": {
+    "label": "Toggle theme"
   }
 }

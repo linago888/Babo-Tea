@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-based dark mode：套 .dark 在 <html> 上即可切換 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -34,11 +37,10 @@
     ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Class-based override for dark mode（由 ThemeScript inline 套上 .dark class）*/
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 body {
