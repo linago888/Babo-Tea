@@ -9,6 +9,21 @@ import { isAdminAuthorized } from "@/lib/admin-auth-check";
 import { scoreNews } from "@/lib/content-quality/completeness";
 import { prisma } from "@/lib/prisma";
 
+const RELEVANCE = z.enum(["PRIMARY", "SECONDARY", "MENTIONED"]);
+
+const RelatedBrand = z.object({
+  brandId: z.string().uuid(),
+  relevance: RELEVANCE.default("MENTIONED"),
+});
+const RelatedCity = z.object({
+  cityId: z.string().uuid(),
+  relevance: RELEVANCE.default("MENTIONED"),
+});
+const RelatedDrink = z.object({
+  drinkId: z.string().uuid(),
+  relevance: RELEVANCE.default("MENTIONED"),
+});
+
 const UpdateSchema = z.object({
   slug: z.string().min(1).regex(/^[a-z0-9-]+$/),
   titleI18n: z.record(z.string(), z.string()),
@@ -32,6 +47,9 @@ const UpdateSchema = z.object({
   editorTags: z.array(z.string()).default([]),
   seoI18n: z.unknown().optional().nullable(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).default("DRAFT"),
+  relatedBrands: z.array(RelatedBrand).optional(),
+  relatedCities: z.array(RelatedCity).optional(),
+  relatedDrinks: z.array(RelatedDrink).optional(),
 });
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -94,6 +112,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
   }
 
+  const projectedBrands = data.relatedBrands ?? existing.newsBrands;
+  const projectedCities = data.relatedCities ?? existing.newsCities;
+  const projectedDrinks = data.relatedDrinks ?? existing.newsDrinks;
+
   const { score } = scoreNews({
     titleI18n: data.titleI18n,
     summaryI18n: data.summaryI18n,
@@ -102,41 +124,79 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     heroImageUrl: data.heroImageUrl || null,
     editorTags: data.editorTags,
     sourceUrl: data.sourceUrl,
-    newsBrands: existing.newsBrands,
-    newsCities: existing.newsCities,
-    newsDrinks: existing.newsDrinks,
+    newsBrands: projectedBrands,
+    newsCities: projectedCities,
+    newsDrinks: projectedDrinks,
   });
 
-  const updated = await prisma.news.update({
-    where: { id },
-    data: {
-      slug: data.slug,
-      titleI18n: data.titleI18n as never,
-      summaryI18n: data.summaryI18n as never,
-      bodyI18n: data.bodyI18n as never,
-      aiSummaryI18n: (data.aiSummaryI18n ?? null) as never,
-      aiSummaryReviewedAt: data.aiSummaryReviewedAt ? new Date(data.aiSummaryReviewedAt) : null,
-      category: data.category,
-      sourceId: data.sourceId,
-      sourceUrl: data.sourceUrl ?? "",
-      publishedAt: new Date(data.publishedAt),
-      heroImageUrl: data.heroImageUrl || null,
-      editorTags: data.editorTags,
-      seoI18n: (data.seoI18n ?? null) as never,
-      status: data.status,
-      completenessScore: score,
-      lastHumanEditAt: new Date(),
-    },
-    select: { id: true, slug: true },
+  await prisma.$transaction(async (tx) => {
+    await tx.news.update({
+      where: { id },
+      data: {
+        slug: data.slug,
+        titleI18n: data.titleI18n as never,
+        summaryI18n: data.summaryI18n as never,
+        bodyI18n: data.bodyI18n as never,
+        aiSummaryI18n: (data.aiSummaryI18n ?? null) as never,
+        aiSummaryReviewedAt: data.aiSummaryReviewedAt ? new Date(data.aiSummaryReviewedAt) : null,
+        category: data.category,
+        sourceId: data.sourceId,
+        sourceUrl: data.sourceUrl ?? "",
+        publishedAt: new Date(data.publishedAt),
+        heroImageUrl: data.heroImageUrl || null,
+        editorTags: data.editorTags,
+        seoI18n: (data.seoI18n ?? null) as never,
+        status: data.status,
+        completenessScore: score,
+        lastHumanEditAt: new Date(),
+      },
+    });
+
+    if (data.relatedBrands) {
+      await tx.newsBrand.deleteMany({ where: { newsId: id } });
+      if (data.relatedBrands.length > 0) {
+        await tx.newsBrand.createMany({
+          data: data.relatedBrands.map((b) => ({
+            newsId: id,
+            brandId: b.brandId,
+            relevance: b.relevance,
+          })),
+        });
+      }
+    }
+    if (data.relatedCities) {
+      await tx.newsCity.deleteMany({ where: { newsId: id } });
+      if (data.relatedCities.length > 0) {
+        await tx.newsCity.createMany({
+          data: data.relatedCities.map((c) => ({
+            newsId: id,
+            cityId: c.cityId,
+            relevance: c.relevance,
+          })),
+        });
+      }
+    }
+    if (data.relatedDrinks) {
+      await tx.newsDrink.deleteMany({ where: { newsId: id } });
+      if (data.relatedDrinks.length > 0) {
+        await tx.newsDrink.createMany({
+          data: data.relatedDrinks.map((d) => ({
+            newsId: id,
+            drinkId: d.drinkId,
+            relevance: d.relevance,
+          })),
+        });
+      }
+    }
   });
 
   revalidatePath("/[locale]/news", "layout");
-  revalidatePath(`/[locale]/news/${updated.slug}`, "layout");
-  if (existing.slug !== updated.slug) {
+  revalidatePath(`/[locale]/news/${data.slug}`, "layout");
+  if (existing.slug !== data.slug) {
     revalidatePath(`/[locale]/news/${existing.slug}`, "layout");
   }
 
-  return Response.json({ ok: true, news: updated });
+  return Response.json({ ok: true, news: { id, slug: data.slug } });
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {

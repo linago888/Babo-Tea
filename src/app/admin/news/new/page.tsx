@@ -17,5 +17,6 @@ export default async function AdminNewsNewPage() {
     id: s.id,
     label: `${pickI18n(s.nameI18n, locale, { fallback: s.slug })} · ${s.domain}`,
   }));
-  return <NewsForm mode="create" initial={{}} sources={sourceOptions} />;
+  // 在 create mode 下 relation tabs 不顯示，可以傳空陣列
+  return <NewsForm mode="create" initial={{}} sources={sourceOptions} brands={[]} cities={[]} drinks={[]} />;
 }

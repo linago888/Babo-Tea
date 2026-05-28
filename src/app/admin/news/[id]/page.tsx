@@ -25,18 +25,45 @@ export default async function AdminNewsEditPage({
   const { id } = await params;
   const locale = (await getAdminLocale()) as Locale;
 
-  const news = await prisma.news.findUnique({ where: { id } });
+  const news = await prisma.news.findUnique({
+    where: { id },
+    include: {
+      newsBrands: { select: { brandId: true, relevance: true } },
+      newsCities: { select: { cityId: true, relevance: true } },
+      newsDrinks: { select: { drinkId: true, relevance: true } },
+    },
+  });
   if (!news) notFound();
 
-  const sources = await prisma.source.findMany({
-    where: { status: { not: "ARCHIVED" } },
-    select: { id: true, slug: true, nameI18n: true, domain: true },
-    orderBy: { slug: "asc" },
-  });
+  const [sources, brands, cities, drinks] = await Promise.all([
+    prisma.source.findMany({
+      where: { status: { not: "ARCHIVED" } },
+      select: { id: true, slug: true, nameI18n: true, domain: true },
+      orderBy: { slug: "asc" },
+    }),
+    prisma.brand.findMany({
+      where: { status: { not: "ARCHIVED" } },
+      select: { id: true, slug: true, nameI18n: true },
+      orderBy: { slug: "asc" },
+    }),
+    prisma.city.findMany({
+      where: { status: { not: "ARCHIVED" } },
+      select: { id: true, slug: true, nameI18n: true },
+      orderBy: { slug: "asc" },
+    }),
+    prisma.drink.findMany({
+      where: { status: { not: "ARCHIVED" } },
+      select: { id: true, slug: true, nameI18n: true },
+      orderBy: { slug: "asc" },
+    }),
+  ]);
   const sourceOptions = sources.map((s) => ({
     id: s.id,
     label: `${pickI18n(s.nameI18n, locale, { fallback: s.slug })} · ${s.domain}`,
   }));
+  const brandOptions = brands.map((b) => ({ id: b.id, label: pickI18n(b.nameI18n, locale, { fallback: b.slug }) }));
+  const cityOptions = cities.map((c) => ({ id: c.id, label: pickI18n(c.nameI18n, locale, { fallback: c.slug }) }));
+  const drinkOptions = drinks.map((d) => ({ id: d.id, label: pickI18n(d.nameI18n, locale, { fallback: d.slug }) }));
 
   const initial: NewsFormInitial = {
     id: news.id,
@@ -54,7 +81,20 @@ export default async function AdminNewsEditPage({
     heroImageUrl: news.heroImageUrl ?? "",
     editorTags: news.editorTags.join(", "),
     status: news.status,
+    relatedBrands: news.newsBrands.map((nb) => ({ brandId: nb.brandId, relevance: nb.relevance })),
+    relatedCities: news.newsCities.map((nc) => ({ cityId: nc.cityId, relevance: nc.relevance })),
+    relatedDrinks: news.newsDrinks.map((nd) => ({ drinkId: nd.drinkId, relevance: nd.relevance })),
   };
 
-  return <NewsForm mode="edit" newsId={news.id} initial={initial} sources={sourceOptions} />;
+  return (
+    <NewsForm
+      mode="edit"
+      newsId={news.id}
+      initial={initial}
+      sources={sourceOptions}
+      brands={brandOptions}
+      cities={cityOptions}
+      drinks={drinkOptions}
+    />
+  );
 }
