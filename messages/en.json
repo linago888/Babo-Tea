@@ -123,6 +123,85 @@
     "popularityScore": "Popularity {score}",
     "viewAllBrands": "All brands →"
   },
+  "drinkList": {
+    "title": "Drinks",
+    "subtitle": "{count} bubble tea drinks tracked across brands",
+    "filter": {
+      "category": "Category",
+      "teaBase": "Tea base",
+      "caffeine": "Caffeine",
+      "temperature": "Temperature",
+      "all": "All",
+      "clear": "Clear filters"
+    },
+    "category": {
+      "milk_tea": "Milk tea",
+      "fruit_tea": "Fruit tea",
+      "pure_tea": "Pure tea",
+      "cheese_tea": "Cheese tea",
+      "coffee_tea": "Coffee tea",
+      "smoothie": "Smoothie",
+      "other": "Other"
+    },
+    "temperature": {
+      "hot": "Hot",
+      "iced": "Iced",
+      "blended": "Blended"
+    },
+    "caffeine": {
+      "with": "With caffeine",
+      "without": "Caffeine-free"
+    },
+    "empty": "No drinks match these filters."
+  },
+  "drinkCard": {
+    "calories": "{min}–{max} kcal",
+    "caffeine": "{min}–{max} mg caffeine",
+    "caffeineFree": "Caffeine-free",
+    "brandsCount": "{count, plural, =0 {Not on any menu yet} one {1 brand carries it} other {# brands carry it}}"
+  },
+  "drinkDetail": {
+    "notFound": "Drink not found",
+    "sections": {
+      "story": "About this drink",
+      "flavorProfile": "Flavor profile",
+      "recipe": "Recipe",
+      "brandPrices": "Available at",
+      "topCities": "Most popular in",
+      "recentNews": "Recent news",
+      "basicInfo": "At a glance"
+    },
+    "recipe": {
+      "teaBase": "Tea base",
+      "milkType": "Milk",
+      "toppings": "Toppings",
+      "sweetener": "Sweetener",
+      "temperature": "Served",
+      "sugar": "Sugar levels"
+    },
+    "info": {
+      "category": "Category",
+      "calories": "Calories (medium)",
+      "caffeine": "Caffeine",
+      "sugarLevels": "Sugar options"
+    },
+    "emptyState": {
+      "brands": "No brands currently carry this drink.",
+      "cities": "No popularity data yet.",
+      "news": "No news about this drink yet.",
+      "flavor": "No flavor profile recorded."
+    },
+    "signature": "Signature",
+    "popularity": "Popularity"
+  },
+  "flavorAxes": {
+    "sweet": "Sweet",
+    "bitter": "Bitter",
+    "milky": "Milky",
+    "fruity": "Fruity",
+    "floral": "Floral",
+    "roasted": "Roasted"
+  },
   "relevance": {
     "primary": "Primary",
     "secondary": "Secondary",

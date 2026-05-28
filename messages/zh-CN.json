@@ -123,6 +123,85 @@
     "popularityScore": "热度 {score}",
     "viewAllBrands": "全部品牌 →"
   },
+  "drinkList": {
+    "title": "饮品",
+    "subtitle": "跨品牌追踪中的 {count} 款珍奶饮品",
+    "filter": {
+      "category": "类别",
+      "teaBase": "茶底",
+      "caffeine": "咖啡因",
+      "temperature": "温度",
+      "all": "全部",
+      "clear": "清除筛选"
+    },
+    "category": {
+      "milk_tea": "奶茶",
+      "fruit_tea": "水果茶",
+      "pure_tea": "纯茶",
+      "cheese_tea": "奶盖茶",
+      "coffee_tea": "咖啡茶",
+      "smoothie": "冰沙",
+      "other": "其他"
+    },
+    "temperature": {
+      "hot": "热饮",
+      "iced": "冰饮",
+      "blended": "冰沙"
+    },
+    "caffeine": {
+      "with": "含咖啡因",
+      "without": "无咖啡因"
+    },
+    "empty": "没有符合条件的饮品。"
+  },
+  "drinkCard": {
+    "calories": "{min}–{max} 大卡",
+    "caffeine": "{min}–{max} mg 咖啡因",
+    "caffeineFree": "无咖啡因",
+    "brandsCount": "{count, plural, =0 {当前无品牌售卖} other {# 个品牌售卖}}"
+  },
+  "drinkDetail": {
+    "notFound": "找不到此饮品",
+    "sections": {
+      "story": "饮品介绍",
+      "flavorProfile": "口味轮廓",
+      "recipe": "配方",
+      "brandPrices": "哪里买得到",
+      "topCities": "最流行的城市",
+      "recentNews": "近期新闻",
+      "basicInfo": "基本资料"
+    },
+    "recipe": {
+      "teaBase": "茶底",
+      "milkType": "奶种",
+      "toppings": "配料",
+      "sweetener": "甜味剂",
+      "temperature": "供应温度",
+      "sugar": "甜度选项"
+    },
+    "info": {
+      "category": "类别",
+      "calories": "热量（中杯）",
+      "caffeine": "咖啡因",
+      "sugarLevels": "甜度选项"
+    },
+    "emptyState": {
+      "brands": "当前无品牌售卖此饮品。",
+      "cities": "暂无热度数据。",
+      "news": "暂无相关新闻。",
+      "flavor": "暂未记录口味轮廓。"
+    },
+    "signature": "招牌",
+    "popularity": "热度"
+  },
+  "flavorAxes": {
+    "sweet": "甜",
+    "bitter": "苦",
+    "milky": "奶香",
+    "fruity": "果香",
+    "floral": "花香",
+    "roasted": "焙香"
+  },
   "relevance": {
     "primary": "主角",
     "secondary": "重要关联",

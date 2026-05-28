@@ -123,6 +123,85 @@
     "popularityScore": "人気度 {score}",
     "viewAllBrands": "すべてのブランド →"
   },
+  "drinkList": {
+    "title": "ドリンク",
+    "subtitle": "ブランド横断で追跡中のタピオカドリンク {count} 件",
+    "filter": {
+      "category": "カテゴリ",
+      "teaBase": "茶葉",
+      "caffeine": "カフェイン",
+      "temperature": "温度",
+      "all": "すべて",
+      "clear": "フィルターをクリア"
+    },
+    "category": {
+      "milk_tea": "ミルクティー",
+      "fruit_tea": "フルーツティー",
+      "pure_tea": "ピュアティー",
+      "cheese_tea": "チーズティー",
+      "coffee_tea": "コーヒーティー",
+      "smoothie": "スムージー",
+      "other": "その他"
+    },
+    "temperature": {
+      "hot": "ホット",
+      "iced": "アイス",
+      "blended": "ブレンデッド"
+    },
+    "caffeine": {
+      "with": "カフェイン入り",
+      "without": "カフェインフリー"
+    },
+    "empty": "条件に合致するドリンクがありません。"
+  },
+  "drinkCard": {
+    "calories": "{min}–{max} kcal",
+    "caffeine": "カフェイン {min}–{max} mg",
+    "caffeineFree": "カフェインフリー",
+    "brandsCount": "{count, plural, =0 {取り扱いブランドなし} other {# ブランドで取扱}}"
+  },
+  "drinkDetail": {
+    "notFound": "ドリンクが見つかりません",
+    "sections": {
+      "story": "このドリンクについて",
+      "flavorProfile": "フレーバープロファイル",
+      "recipe": "レシピ",
+      "brandPrices": "提供ブランド",
+      "topCities": "人気の都市",
+      "recentNews": "最新ニュース",
+      "basicInfo": "基本情報"
+    },
+    "recipe": {
+      "teaBase": "茶葉",
+      "milkType": "ミルク",
+      "toppings": "トッピング",
+      "sweetener": "甘味料",
+      "temperature": "提供温度",
+      "sugar": "甘さの選択肢"
+    },
+    "info": {
+      "category": "カテゴリ",
+      "calories": "カロリー（M）",
+      "caffeine": "カフェイン",
+      "sugarLevels": "甘さの選択肢"
+    },
+    "emptyState": {
+      "brands": "現在取り扱いブランドはありません。",
+      "cities": "人気度データがまだありません。",
+      "news": "関連ニュースはまだありません。",
+      "flavor": "フレーバープロファイルが未記録です。"
+    },
+    "signature": "看板",
+    "popularity": "人気度"
+  },
+  "flavorAxes": {
+    "sweet": "甘味",
+    "bitter": "苦味",
+    "milky": "ミルク",
+    "fruity": "フルーティー",
+    "floral": "花香",
+    "roasted": "ロースト"
+  },
   "relevance": {
     "primary": "主役",
     "secondary": "関連",
