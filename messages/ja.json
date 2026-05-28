@@ -27,6 +27,7 @@
       "featuredBrands": "注目ブランド",
       "popularCities": "最も活発な市場",
       "trendingDrinks": "トレンドドリンク",
+      "graphPreview": "ナレッジグラフ・プレビュー",
       "newsletter": "情報を逃さない"
     },
     "viewAll": {
@@ -39,7 +40,9 @@
       "blurb": "世界のタピオカ業界のブランド展開、新商品、都市レベルの変化を毎週まとめてお届け。",
       "placeholder": "your@email.com",
       "subscribe": "購読する",
-      "soon": "ニュースレター購読は近日公開 — Phase 3 リリースとともに。"
+      "soon": "第1号ニュースレター配信時に確認メールをお送りします。",
+      "successMessage": "ご登録ありがとうございます！",
+      "errorMessage": "登録に失敗しました。もう一度お試しください。"
     }
   },
   "brandList": {

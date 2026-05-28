@@ -4,7 +4,9 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
 import { CityCard } from "@/components/city-card";
 import { DrinkCard } from "@/components/drink-card";
+import { KnowledgeGraphPreview } from "@/components/knowledge-graph-preview";
 import { NewsCard } from "@/components/news-card";
+import { NewsletterForm } from "@/components/newsletter-form";
 import { type Locale } from "@/i18n/routing";
 import { pickI18n } from "@/lib/i18n-text";
 import { formatNumber } from "@/lib/intl";
@@ -256,6 +258,11 @@ export default async function HomePage({
         </ul>
       </Section>
 
+      {/* ── Knowledge graph preview ── */}
+      <Section title={t("home.sections.graphPreview")}>
+        <KnowledgeGraphPreview locale={lc} />
+      </Section>
+
       {/* ── Newsletter ── */}
       <section className="border-t border-neutral-200 bg-neutral-50 px-6 py-14 dark:border-neutral-800 dark:bg-neutral-900">
         <div className="mx-auto max-w-2xl text-center">
@@ -265,36 +272,7 @@ export default async function HomePage({
           <p className="mx-auto mt-2 max-w-xl text-sm text-neutral-600 dark:text-neutral-400">
             {t("home.newsletter.blurb")}
           </p>
-          <form
-            className="mx-auto mt-6 flex max-w-md gap-2"
-            // 暫不串後端；Phase 3 接 Resend / Buttondown 之類服務
-            action="#"
-            method="post"
-            aria-describedby="newsletter-hint"
-          >
-            <label htmlFor="newsletter-email" className="sr-only">
-              {t("home.newsletter.placeholder")}
-            </label>
-            <input
-              id="newsletter-email"
-              type="email"
-              name="email"
-              placeholder={t("home.newsletter.placeholder")}
-              required
-              disabled
-              className="flex-1 rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm transition focus:border-neutral-900 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-950 dark:focus:border-neutral-100"
-            />
-            <button
-              type="submit"
-              disabled
-              className="cursor-not-allowed rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white opacity-60 dark:bg-neutral-100 dark:text-neutral-900"
-            >
-              {t("home.newsletter.subscribe")}
-            </button>
-          </form>
-          <p id="newsletter-hint" className="mt-3 text-xs text-neutral-500 dark:text-neutral-500">
-            {t("home.newsletter.soon")}
-          </p>
+          <NewsletterForm locale={lc} />
         </div>
       </section>
     </main>

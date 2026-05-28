@@ -27,6 +27,7 @@
       "featuredBrands": "Featured brands",
       "popularCities": "Most active markets",
       "trendingDrinks": "Trending drinks",
+      "graphPreview": "Knowledge graph preview",
       "newsletter": "Stay informed"
     },
     "viewAll": {
@@ -39,7 +40,9 @@
       "blurb": "Weekly digest covering brand expansions, new launches and city-level shifts across the global bubble tea industry.",
       "placeholder": "your@email.com",
       "subscribe": "Subscribe",
-      "soon": "Newsletter signup coming soon — coming with our Phase 3 launch."
+      "soon": "We'll send a confirmation email when the first issue ships.",
+      "successMessage": "Thanks! You're on the list.",
+      "errorMessage": "Couldn't subscribe — please try again."
     }
   },
   "brandList": {

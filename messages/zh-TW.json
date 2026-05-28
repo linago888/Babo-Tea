@@ -27,6 +27,7 @@
       "featuredBrands": "精選品牌",
       "popularCities": "最活躍的市場",
       "trendingDrinks": "趨勢飲品",
+      "graphPreview": "知識圖譜預覽",
       "newsletter": "保持關注"
     },
     "viewAll": {
@@ -39,7 +40,9 @@
       "blurb": "每週精選全球珍奶產業的品牌擴張、新品上市與城市市場變化。",
       "placeholder": "your@email.com",
       "subscribe": "訂閱",
-      "soon": "電子報訂閱即將開放，Phase 3 上線。"
+      "soon": "我們會在第一期電子報發送時寄出確認信。",
+      "successMessage": "感謝訂閱！您已在清單中。",
+      "errorMessage": "訂閱失敗 — 請再試一次。"
     }
   },
   "brandList": {

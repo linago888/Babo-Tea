@@ -27,6 +27,7 @@
       "featuredBrands": "精选品牌",
       "popularCities": "最活跃的市场",
       "trendingDrinks": "趋势饮品",
+      "graphPreview": "知识图谱预览",
       "newsletter": "保持关注"
     },
     "viewAll": {
@@ -39,7 +40,9 @@
       "blurb": "每周精选全球珍奶产业的品牌扩张、新品上市与城市市场变化。",
       "placeholder": "your@email.com",
       "subscribe": "订阅",
-      "soon": "电子报订阅即将开放，Phase 3 上线。"
+      "soon": "我们会在第一期电子报发送时寄出确认信。",
+      "successMessage": "感谢订阅！您已在列表中。",
+      "errorMessage": "订阅失败 — 请再试一次。"
     }
   },
   "brandList": {
