@@ -314,6 +314,8 @@
       "stores": "門市",
       "quality": "內容品質",
       "qualityDashboard": "品質儀表板",
+      "metrics": "指標趨勢",
+      "searchLog": "搜尋紀錄",
       "orphans": "孤兒實體",
       "aiQueue": "AI 摘要待審",
       "system": "系統",
@@ -811,6 +813,39 @@
         "validationErrors": "以下欄位缺失或格式錯誤：",
         "back": "← 回門市列表"
       }
+    },
+    "searchLog": {
+      "title": "搜尋紀錄",
+      "subtitle": "公開站使用者實際搜了什麼。零結果 = 內容空缺金牌訊號。",
+      "tiles": {
+        "searches7d": "7 天搜尋次數",
+        "zero7d": "7 天零結果次數",
+        "searches30d": "30 天搜尋次數",
+        "locales": "活躍語系數"
+      },
+      "dailyVolume": "近 30 天每日搜尋量",
+      "dailyVolumeHint": "每點代表當天的搜尋次數。空白日 = 該天沒人搜。",
+      "topQueries": "熱門關鍵字（近 7 天）",
+      "avgResults": "平均命中",
+      "zeroResults": "零結果關鍵字（近 30 天）",
+      "zeroResultsHint": "使用者搜了但什麼都找不到 — 這些是該優先補的內容。",
+      "zeroEmpty": "目前沒有零結果查詢。",
+      "byLocale": "依語系分佈（近 30 天）",
+      "byCountry": "依國家分佈（近 30 天）",
+      "empty": "目前無資料。"
+    },
+    "metrics": {
+      "title": "指標趨勢",
+      "subtitle": "資料庫共有 {total} 筆 metrics_daily 紀錄。執行 `pnpm metrics:run` 重算。",
+      "topBrandsTrending": "熱度最高品牌（trending_score）",
+      "topBrandsTrendingHint": "近期熱度分數綜合計算 — 含新聞、新店、社群提及。",
+      "topBrandsNews": "近 30 天新聞最多品牌",
+      "topBrandsNewsHint": "news_count_30d — 編輯團隊近期重點報導。",
+      "topCities": "城市熱度榜（popularity_score）",
+      "topCitiesHint": "城市的珍奶市場活躍度。",
+      "topDrinks": "飲品流行度（popularity_score）",
+      "topDrinksHint": "經過所有城市加權的飲品流行度。",
+      "footnote": "走勢圖為近 30 天逐日值；右側 Δ 為與 7 天前比較。"
     },
     "relations": {
       "signatureDrinks": "招牌飲品",

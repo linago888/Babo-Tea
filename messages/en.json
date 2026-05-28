@@ -314,6 +314,8 @@
       "stores": "Stores",
       "quality": "Quality",
       "qualityDashboard": "Quality dashboard",
+      "metrics": "Metrics & trends",
+      "searchLog": "Search log",
       "orphans": "Orphans",
       "aiQueue": "AI summary queue",
       "system": "System",
@@ -811,6 +813,39 @@
         "validationErrors": "Some required fields are missing or invalid:",
         "back": "← Back to stores"
       }
+    },
+    "searchLog": {
+      "title": "Search log",
+      "subtitle": "What visitors actually searched for. Zero-result queries are gold for content gaps.",
+      "tiles": {
+        "searches7d": "Searches (7d)",
+        "zero7d": "Zero-result (7d)",
+        "searches30d": "Searches (30d)",
+        "locales": "Active locales"
+      },
+      "dailyVolume": "Daily volume (last 30 days)",
+      "dailyVolumeHint": "Each point is one day's search count. Gaps = no searches that day.",
+      "topQueries": "Top queries (last 7 days)",
+      "avgResults": "avg results",
+      "zeroResults": "Zero-result queries (last 30 days)",
+      "zeroResultsHint": "Visitors searched these and found nothing — prioritise filling.",
+      "zeroEmpty": "No zero-result queries.",
+      "byLocale": "By locale (last 30 days)",
+      "byCountry": "By country (last 30 days)",
+      "empty": "No data yet."
+    },
+    "metrics": {
+      "title": "Metrics & trends",
+      "subtitle": "Database has {total} metrics_daily rows. Run `pnpm metrics:run` to recompute.",
+      "topBrandsTrending": "Top brands by trending_score",
+      "topBrandsTrendingHint": "Composite recency score — news, new stores, social mentions.",
+      "topBrandsNews": "Brands with most news (30d)",
+      "topBrandsNewsHint": "news_count_30d — editorial attention magnet.",
+      "topCities": "Top cities (popularity_score)",
+      "topCitiesHint": "City bubble tea market activity.",
+      "topDrinks": "Top drinks (popularity_score)",
+      "topDrinksHint": "Weighted across cities where the drink is tracked.",
+      "footnote": "Sparkline shows last 30 daily values. Δ on the right = change vs 7 days ago."
     },
     "relations": {
       "signatureDrinks": "Signature drinks",

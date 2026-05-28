@@ -314,6 +314,8 @@
       "stores": "店舗",
       "quality": "コンテンツ品質",
       "qualityDashboard": "品質ダッシュボード",
+      "metrics": "メトリクス推移",
+      "searchLog": "検索ログ",
       "orphans": "孤立エンティティ",
       "aiQueue": "AI 要約レビュー",
       "system": "システム",
@@ -811,6 +813,39 @@
         "validationErrors": "以下のフィールドに不備があります：",
         "back": "← 店舗一覧へ"
       }
+    },
+    "searchLog": {
+      "title": "検索ログ",
+      "subtitle": "公開サイトで何が検索されたか。ゼロ結果はコンテンツ不足のシグナル。",
+      "tiles": {
+        "searches7d": "検索 (7日)",
+        "zero7d": "ゼロ結果 (7日)",
+        "searches30d": "検索 (30日)",
+        "locales": "アクティブ言語"
+      },
+      "dailyVolume": "日次ボリューム（直近 30 日）",
+      "dailyVolumeHint": "各点はその日の検索回数。空白日は検索なし。",
+      "topQueries": "人気キーワード（直近 7 日）",
+      "avgResults": "平均ヒット",
+      "zeroResults": "ゼロ結果キーワード（直近 30 日）",
+      "zeroResultsHint": "検索されたが結果ゼロ — 優先的に埋めるべきコンテンツ。",
+      "zeroEmpty": "ゼロ結果クエリはありません。",
+      "byLocale": "言語別分布（直近 30 日）",
+      "byCountry": "国別分布（直近 30 日）",
+      "empty": "データなし。"
+    },
+    "metrics": {
+      "title": "メトリクス推移",
+      "subtitle": "データベースに metrics_daily {total} 件。`pnpm metrics:run` で再計算。",
+      "topBrandsTrending": "トレンドブランド（trending_score）",
+      "topBrandsTrendingHint": "ニュース・新店・SNS 言及を合算した総合スコア。",
+      "topBrandsNews": "ニュース掲載数トップ（30日）",
+      "topBrandsNewsHint": "news_count_30d — 最近の編集注目度。",
+      "topCities": "都市人気ランキング（popularity_score）",
+      "topCitiesHint": "都市のタピオカ市場活性度。",
+      "topDrinks": "ドリンク人気ランキング（popularity_score）",
+      "topDrinksHint": "全都市での重み付けされた人気度。",
+      "footnote": "スパークラインは直近 30 日。Δ は 7 日前との比較。"
     },
     "relations": {
       "signatureDrinks": "看板ドリンク",

@@ -38,7 +38,11 @@ function useNavGroups(): NavGroup[] {
     },
     {
       label: t("quality"),
-      items: [{ label: t("qualityDashboard"), href: "/admin/quality" }],
+      items: [
+        { label: t("qualityDashboard"), href: "/admin/quality" },
+        { label: t("metrics"), href: "/admin/metrics" },
+        { label: t("searchLog"), href: "/admin/search-log" },
+      ],
     },
   ];
 }

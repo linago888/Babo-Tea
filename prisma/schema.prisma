@@ -703,3 +703,28 @@ model MetricDaily {
   @@index([date])
   @@map("metrics_daily")
 }
+
+// ─────────────────────────────────────────────────────────────
+// search_log — 公開站搜尋紀錄（Phase 5D）
+//
+// 設計：
+// - 每次使用者在 /search 送出查詢就寫一筆（fire-and-forget）
+// - 不關聯使用者 / 不存 IP — 純粹給編輯團隊看「大家在搜什麼」
+// - resultCount=0 的 query 是內容空缺的金牌訊號
+// - 30 天滾動視窗即可，未來可加 housekeeping job 清舊資料
+// ─────────────────────────────────────────────────────────────
+
+model SearchLog {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  query        String /// 已 trim、小寫；查詢字串
+  locale       String /// BCP-47，例 'en' / 'zh-TW'
+  resultCount  Int      @map("result_count") /// 命中總數
+  countryCode  String?  @map("country_code") @db.Char(2) /// Vercel x-vercel-ip-country
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([query])
+  @@index([resultCount])
+  @@index([locale])
+  @@map("search_log")
+}

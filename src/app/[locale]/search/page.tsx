@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { SearchBox } from "@/components/search-box";
 import { type Locale, routing } from "@/i18n/routing";
 import { buildPageMetadata } from "@/lib/metadata";
-import { search, type SearchHit } from "@/lib/search";
+import { logSearch, search, type SearchHit } from "@/lib/search";
 
 type SearchParams = { [k: string]: string | string[] | undefined };
 
@@ -50,6 +51,13 @@ export default async function SearchPage({
   const t = await getTranslations({ locale });
 
   const results = q ? await search(q, locale as Locale) : null;
+
+  // Log search — fire-and-forget，不擋畫面渲染
+  if (results) {
+    const hdrs = await headers();
+    const countryCode = hdrs.get("x-vercel-ip-country");
+    void logSearch(q, locale, results.total, countryCode);
+  }
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">

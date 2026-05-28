@@ -184,3 +184,35 @@ export async function search(rawQuery: string, locale: Locale): Promise<SearchRe
 // 註：上述 raw SQL 預設 locale 沒命中時不會做 fallback。若要 fallback，
 // 可在這層多查 zh-TW + en 然後 dedupe。目前選擇精準（命中當前 locale）。
 export { extractJsonText };
+
+/**
+ * 寫一筆 SearchLog（Phase 5D）
+ *
+ * 設計重點：
+ * - fire-and-forget — 失敗時 console.warn 就好，不阻塞使用者
+ * - 太短的 query（< 2 字元）不記，避免單字母 noise
+ * - query 正規化：trim + lowercase，方便 aggregate
+ * - 不記 IP，只記 country code（aggregated 風險低）
+ */
+export async function logSearch(
+  rawQuery: string,
+  locale: string,
+  resultCount: number,
+  countryCode: string | null = null,
+): Promise<void> {
+  const query = rawQuery.trim().toLowerCase();
+  if (query.length < 2) return;
+  try {
+    await prisma.searchLog.create({
+      data: {
+        query,
+        locale,
+        resultCount,
+        countryCode: countryCode ? countryCode.toUpperCase().slice(0, 2) : null,
+      },
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn("[search] logSearch failed:", err instanceof Error ? err.message : err);
+  }
+}

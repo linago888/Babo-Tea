@@ -314,6 +314,8 @@
       "stores": "门市",
       "quality": "内容质量",
       "qualityDashboard": "质量仪表板",
+      "metrics": "指标趋势",
+      "searchLog": "搜索日志",
       "orphans": "孤儿实体",
       "aiQueue": "AI 摘要待审",
       "system": "系统",
@@ -811,6 +813,39 @@
         "validationErrors": "以下字段缺失或格式错误：",
         "back": "← 回门市列表"
       }
+    },
+    "searchLog": {
+      "title": "搜索日志",
+      "subtitle": "公开站访客实际搜索了什么。零结果 = 内容缺口金牌信号。",
+      "tiles": {
+        "searches7d": "7 天搜索次数",
+        "zero7d": "7 天零结果次数",
+        "searches30d": "30 天搜索次数",
+        "locales": "活跃语种数"
+      },
+      "dailyVolume": "近 30 天每日搜索量",
+      "dailyVolumeHint": "每个点代表当天的搜索次数。空白日 = 该天没人搜。",
+      "topQueries": "热门关键词（近 7 天）",
+      "avgResults": "平均命中",
+      "zeroResults": "零结果关键词（近 30 天）",
+      "zeroResultsHint": "访客搜了但什么都没找到 — 这些是该优先补的内容。",
+      "zeroEmpty": "目前没有零结果查询。",
+      "byLocale": "按语种分布（近 30 天）",
+      "byCountry": "按国家分布（近 30 天）",
+      "empty": "目前无数据。"
+    },
+    "metrics": {
+      "title": "指标趋势",
+      "subtitle": "数据库共有 {total} 条 metrics_daily 记录。运行 `pnpm metrics:run` 重算。",
+      "topBrandsTrending": "热度最高品牌（trending_score）",
+      "topBrandsTrendingHint": "近期热度综合分数 — 含新闻、新店、社交媒体提及。",
+      "topBrandsNews": "近 30 天新闻最多品牌",
+      "topBrandsNewsHint": "news_count_30d — 编辑团队近期重点报道。",
+      "topCities": "城市热度榜（popularity_score）",
+      "topCitiesHint": "城市的奶茶市场活跃度。",
+      "topDrinks": "饮品流行度（popularity_score）",
+      "topDrinksHint": "经所有城市加权后的饮品流行度。",
+      "footnote": "趋势图为近 30 天逐日值；右侧 Δ 为与 7 天前比较。"
     },
     "relations": {
       "signatureDrinks": "招牌饮品",
