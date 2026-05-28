@@ -150,18 +150,6 @@ enum BrandCityStatus {
   @@map("brand_city_status")
 }
 
-/// brand_company.relation：母公司、licensor、franchisor、投資人、前任 owner 等
-enum CompanyRelation {
-  OWNER        @map("owner")
-  PARENT       @map("parent")
-  LICENSOR     @map("licensor")
-  FRANCHISOR   @map("franchisor")
-  INVESTOR     @map("investor")
-  FORMER_OWNER @map("former_owner")
-
-  @@map("company_relation")
-}
-
 // ─────────────────────────────────────────────────────────────
 // Day 1 baseline：保留 HealthCheck（Day 2 已落地，不影響）
 // ─────────────────────────────────────────────────────────────
@@ -266,8 +254,6 @@ model Brand {
   newsBrands           NewsBrand[]
   similaritiesAsA      BrandSimilarity[]  @relation("BrandSimilarityA")
   similaritiesAsB      BrandSimilarity[]  @relation("BrandSimilarityB")
-  stores               Store[]
-  brandCompanies       BrandCompany[]
 
   @@index([countryCode])
   @@index([status])
@@ -307,7 +293,6 @@ model City {
   brandCities         BrandCity[]
   drinkCities         DrinkCity[]
   newsCities          NewsCity[]
-  stores              Store[]
 
   @@index([countryCode])
   @@index([status])
@@ -539,95 +524,4 @@ model BrandSimilarity {
   @@index([brandBId])
   @@index([score(sort: Desc)])
   @@map("brand_similarities")
-}
-
-// ─────────────────────────────────────────────────────────────
-// §3 companies & brand_company（Day 5）
-// 表達品牌 ↔ 母集團關係：Chatime ↔ La Kaffa、The Alley ↔ 阿里山食品 等
-// ─────────────────────────────────────────────────────────────
-
-/// §3 companies — 母公司 / 集團（與 brands 一對多，透過 brand_company）
-model Company {
-  id                String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug              String       @unique
-  nameI18n          Json         @map("name_i18n")
-  countryCode       String       @map("country_code") @db.Char(2)
-  foundedYear       Int?         @map("founded_year") @db.SmallInt
-  stockTicker       String?      @map("stock_ticker") /// 例：'TWSE:2729'
-  website           String?
-  descriptionI18n   Json?        @map("description_i18n")
-  status            EntityStatus @default(DRAFT)
-  // 內容品質
-  completenessScore Int?         @map("completeness_score")
-  lastHumanEditAt   DateTime?    @map("last_human_edit_at") @db.Timestamptz(6)
-  contentOwnerId    String?      @map("content_owner_id") @db.Uuid
-  reviewDueAt       DateTime?    @map("review_due_at") @db.Timestamptz(6)
-  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  brandCompanies BrandCompany[]
-
-  @@index([countryCode])
-  @@index([status])
-  @@map("companies")
-}
-
-/// §3.1 brand_company — 品牌與母公司的多對多 + 關係類型 + 時序
-/// PK 含 since：允許同一對 (brand, company, relation) 在不同時間點有不同生效期
-/// 例如 Bossa Nova 先後被不同公司持有
-model BrandCompany {
-  brandId   String          @map("brand_id") @db.Uuid
-  companyId String          @map("company_id") @db.Uuid
-  relation  CompanyRelation
-  since     DateTime        @db.Date
-  until     DateTime?       @db.Date /// NULL = 仍有效
-  notes     String?
-  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  brand   Brand   @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@id([brandId, companyId, relation, since])
-  @@index([companyId])
-  @@index([relation])
-  @@map("brand_company")
-}
-
-// ─────────────────────────────────────────────────────────────
-// §2 stores（Day 5）
-// 支援城市頁推薦店鋪、未來地圖、LocalBusiness JSON-LD、加盟商情報
-// ─────────────────────────────────────────────────────────────
-
-/// §2 stores — 實體店鋪
-/// 註：PostGIS GIST index on (lng, lat) 將於有地圖需求時另加（pg extension）
-/// 目前用 lat / lng 個別 B-tree 即可支援 bounding-box 查詢
-model Store {
-  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  brandId       String       @map("brand_id") @db.Uuid
-  cityId        String       @map("city_id") @db.Uuid
-  nameI18n      Json?        @map("name_i18n") /// 通常品牌名 + 分店名，必要才填
-  addressI18n   Json         @map("address_i18n") /// 地址通常要多語
-  lat           Decimal      @db.Decimal(9, 6)
-  lng           Decimal      @db.Decimal(9, 6)
-  phone         String? /// E.164 格式：'+886-2-12345678'
-  openingHours  Json?        @map("opening_hours") /// schema.org OpeningHoursSpecification shape
-  isFlagship    Boolean      @default(false) @map("is_flagship")
-  openedAt      DateTime?    @map("opened_at") @db.Date /// 計算城市新店速度用
-  closedAt      DateTime?    @map("closed_at") @db.Date /// NULL = 仍營業
-  franchise     Boolean      @default(false) /// 是否為加盟店
-  externalIds   Json?        @map("external_ids") /// { google_place_id, yelp_id, naver_id, ... } 防重要
-  status        EntityStatus @default(DRAFT)
-  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  city  City  @relation(fields: [cityId], references: [id], onDelete: Cascade)
-
-  @@index([brandId, cityId])
-  @@index([cityId, openedAt])
-  @@index([status])
-  @@index([isFlagship])
-  // 地理 bounding box 查詢（簡易版，未來 PostGIS 取代）
-  @@index([lat, lng])
-  @@map("stores")
 }
