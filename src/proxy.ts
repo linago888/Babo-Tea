@@ -79,8 +79,87 @@ function pickPreferredLocale(req: NextRequest): Locale {
 
 const intlMiddleware = createIntlMiddleware(routing);
 
+/**
+ * HTTP Basic Auth for /admin/*
+ * 邏輯與 src/lib/admin-auth.ts 對齊，但放在 middleware 才能正確輸出 401 + WWW-Authenticate
+ */
+function checkAdminAuth(req: NextRequest): NextResponse | null {
+  const user = process.env.ADMIN_USER;
+  const password = process.env.ADMIN_PASSWORD;
+
+  if (!user || !password) {
+    return new NextResponse("Admin disabled — set ADMIN_USER / ADMIN_PASSWORD env vars", {
+      status: 401,
+      headers: {
+        "WWW-Authenticate": 'Basic realm="Global Boba Graph Admin", charset="UTF-8"',
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  const authHeader = req.headers.get("authorization") ?? "";
+  const match = authHeader.match(/^Basic (.+)$/);
+  if (!match) {
+    return new NextResponse("Authentication required", {
+      status: 401,
+      headers: {
+        "WWW-Authenticate": 'Basic realm="Global Boba Graph Admin", charset="UTF-8"',
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  let decoded: string;
+  try {
+    decoded = atob(match[1]);
+  } catch {
+    return new NextResponse("Invalid credentials", {
+      status: 401,
+      headers: { "WWW-Authenticate": 'Basic realm="Global Boba Graph Admin"' },
+    });
+  }
+
+  const idx = decoded.indexOf(":");
+  if (idx === -1) {
+    return new NextResponse("Invalid credentials", {
+      status: 401,
+      headers: { "WWW-Authenticate": 'Basic realm="Global Boba Graph Admin"' },
+    });
+  }
+
+  // Constant-time compare to mitigate timing attacks
+  const presentedUser = decoded.slice(0, idx);
+  const presentedPass = decoded.slice(idx + 1);
+  if (presentedUser.length !== user.length || presentedPass.length !== password.length) {
+    return new NextResponse("Invalid credentials", {
+      status: 401,
+      headers: { "WWW-Authenticate": 'Basic realm="Global Boba Graph Admin"' },
+    });
+  }
+  let diff = 0;
+  for (let i = 0; i < user.length; i++) {
+    diff |= presentedUser.charCodeAt(i) ^ user.charCodeAt(i);
+  }
+  for (let i = 0; i < password.length; i++) {
+    diff |= presentedPass.charCodeAt(i) ^ password.charCodeAt(i);
+  }
+  if (diff !== 0) {
+    return new NextResponse("Invalid credentials", {
+      status: 401,
+      headers: { "WWW-Authenticate": 'Basic realm="Global Boba Graph Admin"' },
+    });
+  }
+
+  return null; // 通過驗證
+}
+
 export default function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  // /admin/* 走獨立 HTTP Basic Auth（不做 locale routing）
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    return checkAdminAuth(req) ?? NextResponse.next();
+  }
 
   // 若 path 已帶 locale，交給 next-intl middleware（會處理 i18n 內部邏輯）
   const hasLocalePrefix = routing.locales.some(
@@ -106,5 +185,6 @@ export default function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|trpc|_next|_vercel|admin|.*\\..*).*)"],
+  // 注意：matcher 移除 `admin|` 排除，因 admin 現在需要 middleware 做 auth
+  matcher: ["/((?!api|trpc|_next|_vercel|.*\\..*).*)"],
 };

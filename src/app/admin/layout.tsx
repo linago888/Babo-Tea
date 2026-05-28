@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { requireAdminAuth } from "@/lib/admin-auth";
-
 export const metadata: Metadata = {
   title: "Admin · Global Boba Graph",
   description: "Internal editorial dashboard.",
   robots: { index: false, follow: false }, // 防止 search engine 收錄
 };
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  await requireAdminAuth();
+// Auth handled by proxy.ts middleware (HTTP Basic). 進到這層代表已通過驗證。
 
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50">
       <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
