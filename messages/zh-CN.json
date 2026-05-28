@@ -310,6 +310,8 @@
       "news": "新闻",
       "sources": "新闻来源",
       "taxonomies": "受控词汇",
+      "companies": "母公司",
+      "stores": "门市",
       "quality": "内容质量",
       "qualityDashboard": "质量仪表板",
       "orphans": "孤儿实体",
@@ -716,6 +718,134 @@
         "validationErrors": "以下字段缺失或格式错误：",
         "back": "← 回词汇列表"
       }
+    },
+    "companies": {
+      "listTitle": "母公司",
+      "listSubtitle": "追踪中 {count} 家母公司 / 集团。",
+      "create": "新增公司",
+      "search": "按名称或 slug 搜索…",
+      "table": {
+        "name": "名称",
+        "country": "国家",
+        "founded": "成立",
+        "ticker": "股票代码",
+        "website": "官网",
+        "status": "状态",
+        "completeness": "完整度",
+        "updated": "最后更新"
+      },
+      "status": { "draft": "草稿", "published": "已发布", "archived": "已归档" },
+      "edit": {
+        "title": "编辑公司",
+        "createTitle": "新增公司",
+        "notFound": "找不到该公司",
+        "tabs": { "general": "基本信息", "i18n": "多语翻译" },
+        "fields": {
+          "slug": "Slug",
+          "slugHint": "URL 标识符。仅限小写字母、数字、连字符。",
+          "countryCode": "国家（ISO Alpha-2）",
+          "foundedYear": "成立年份",
+          "stockTicker": "股票代码",
+          "stockTickerHint": "例如 TWSE:2729、NASDAQ:STBX。",
+          "website": "官方网站",
+          "status": "状态",
+          "nameI18n": "公司名称",
+          "descriptionI18n": "公司介绍"
+        },
+        "saveButton": "保存",
+        "saving": "保存中…",
+        "saved": "保存成功",
+        "deleteButton": "归档（不删除）",
+        "deleteConfirm": "确定要归档该公司？品牌关联不会受影响。",
+        "validationErrors": "以下字段缺失或格式错误：",
+        "back": "← 回公司列表"
+      }
+    },
+    "stores": {
+      "listTitle": "门市",
+      "listSubtitle": "追踪中 {count} 家门市。",
+      "create": "新增门市",
+      "search": "按品牌、城市或地址搜索…",
+      "table": {
+        "brand": "品牌",
+        "city": "城市",
+        "address": "地址",
+        "flagship": "旗舰店",
+        "franchise": "加盟",
+        "openedAt": "开业",
+        "status": "状态",
+        "updated": "最后更新"
+      },
+      "status": { "draft": "草稿", "published": "已发布", "archived": "已归档" },
+      "edit": {
+        "title": "编辑门市",
+        "createTitle": "新增门市",
+        "notFound": "找不到该门市",
+        "tabs": { "general": "基本信息", "i18n": "多语地址", "advanced": "进阶" },
+        "fields": {
+          "brandId": "品牌",
+          "cityId": "城市",
+          "lat": "纬度",
+          "lng": "经度",
+          "coordHint": "WGS84 十进制，6 位小数。",
+          "phone": "电话",
+          "phoneHint": "E.164 格式，例如 +886-2-12345678。",
+          "openingHours": "营业时间（JSON）",
+          "openingHoursHint": "schema.org OpeningHoursSpecification 格式。",
+          "isFlagship": "旗舰店",
+          "franchise": "加盟店",
+          "openedAt": "开业日",
+          "closedAt": "歇业日",
+          "closedAtHint": "留空代表仍营业。",
+          "externalIds": "外部 ID（JSON）",
+          "externalIdsHint": "{ google_place_id, yelp_id, naver_id, ... }",
+          "status": "状态",
+          "nameI18n": "分店名称（选填）",
+          "addressI18n": "地址"
+        },
+        "saveButton": "保存",
+        "saving": "保存中…",
+        "saved": "保存成功",
+        "deleteButton": "归档（不删除）",
+        "deleteConfirm": "确定要归档该门市？",
+        "validationErrors": "以下字段缺失或格式错误：",
+        "back": "← 回门市列表"
+      }
+    },
+    "relations": {
+      "signatureDrinks": "招牌饮品",
+      "cities": "进驻城市",
+      "companies": "母公司关联",
+      "relatedBrands": "相关品牌",
+      "relatedCities": "相关城市",
+      "relatedDrinks": "相关饮品",
+      "isSignature": "招牌",
+      "addRelation": "+ 新增关联",
+      "remove": "移除",
+      "empty": "尚无关联。",
+      "relevance": "关联程度",
+      "relevanceLevel": {
+        "primary": "主角",
+        "secondary": "配角",
+        "mentioned": "顺带提及"
+      },
+      "brandCityStatus": {
+        "active": "运营中",
+        "exited": "已撤出",
+        "rumored": "传闻进驻"
+      },
+      "companyRelation": {
+        "owner": "所有人",
+        "parent": "母公司",
+        "licensor": "授权方",
+        "franchisor": "加盟总部",
+        "investor": "投资人",
+        "former_owner": "前任所有人"
+      },
+      "since": "自",
+      "until": "至",
+      "untilHint": "留空代表仍有效。",
+      "enteredAt": "进驻日"
     },
     "soon": "（即将推出）"
   },

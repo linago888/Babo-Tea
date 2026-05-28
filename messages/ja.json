@@ -310,6 +310,8 @@
       "news": "ニュース",
       "sources": "ニュース出典",
       "taxonomies": "統制語彙",
+      "companies": "親会社",
+      "stores": "店舗",
       "quality": "コンテンツ品質",
       "qualityDashboard": "品質ダッシュボード",
       "orphans": "孤立エンティティ",
@@ -716,6 +718,134 @@
         "validationErrors": "以下のフィールドに不備があります：",
         "back": "← 用語一覧へ"
       }
+    },
+    "companies": {
+      "listTitle": "親会社",
+      "listSubtitle": "{count} 社の親会社／グループを追跡中。",
+      "create": "新規会社",
+      "search": "名前または slug で検索…",
+      "table": {
+        "name": "名前",
+        "country": "国",
+        "founded": "設立",
+        "ticker": "ティッカー",
+        "website": "ウェブサイト",
+        "status": "ステータス",
+        "completeness": "完成度",
+        "updated": "更新日時"
+      },
+      "status": { "draft": "下書き", "published": "公開", "archived": "アーカイブ" },
+      "edit": {
+        "title": "会社を編集",
+        "createTitle": "新規会社",
+        "notFound": "会社が見つかりません",
+        "tabs": { "general": "基本情報", "i18n": "翻訳" },
+        "fields": {
+          "slug": "Slug",
+          "slugHint": "URL 識別子。英小文字・数字・ハイフンのみ。",
+          "countryCode": "国（ISO Alpha-2）",
+          "foundedYear": "設立年",
+          "stockTicker": "ティッカー",
+          "stockTickerHint": "例：TWSE:2729、NASDAQ:STBX。",
+          "website": "公式サイト",
+          "status": "ステータス",
+          "nameI18n": "社名",
+          "descriptionI18n": "紹介文"
+        },
+        "saveButton": "保存",
+        "saving": "保存中…",
+        "saved": "保存しました",
+        "deleteButton": "アーカイブ（削除しない）",
+        "deleteConfirm": "この会社をアーカイブしますか？ブランド関連には影響しません。",
+        "validationErrors": "以下のフィールドに不備があります：",
+        "back": "← 会社一覧へ"
+      }
+    },
+    "stores": {
+      "listTitle": "店舗",
+      "listSubtitle": "{count} 店舗を追跡中。",
+      "create": "新規店舗",
+      "search": "ブランド・都市・住所で検索…",
+      "table": {
+        "brand": "ブランド",
+        "city": "都市",
+        "address": "住所",
+        "flagship": "フラッグシップ",
+        "franchise": "フランチャイズ",
+        "openedAt": "開業",
+        "status": "ステータス",
+        "updated": "更新日時"
+      },
+      "status": { "draft": "下書き", "published": "公開", "archived": "アーカイブ" },
+      "edit": {
+        "title": "店舗を編集",
+        "createTitle": "新規店舗",
+        "notFound": "店舗が見つかりません",
+        "tabs": { "general": "基本情報", "i18n": "住所（多言語）", "advanced": "詳細" },
+        "fields": {
+          "brandId": "ブランド",
+          "cityId": "都市",
+          "lat": "緯度",
+          "lng": "経度",
+          "coordHint": "WGS84 十進、小数点 6 桁。",
+          "phone": "電話",
+          "phoneHint": "E.164 形式、例：+886-2-12345678。",
+          "openingHours": "営業時間（JSON）",
+          "openingHoursHint": "schema.org OpeningHoursSpecification 形式。",
+          "isFlagship": "フラッグシップ",
+          "franchise": "フランチャイズ",
+          "openedAt": "開業日",
+          "closedAt": "閉業日",
+          "closedAtHint": "空欄なら営業中。",
+          "externalIds": "外部 ID（JSON）",
+          "externalIdsHint": "{ google_place_id, yelp_id, naver_id, ... }",
+          "status": "ステータス",
+          "nameI18n": "店舗名（任意）",
+          "addressI18n": "住所"
+        },
+        "saveButton": "保存",
+        "saving": "保存中…",
+        "saved": "保存しました",
+        "deleteButton": "アーカイブ（削除しない）",
+        "deleteConfirm": "この店舗をアーカイブしますか？",
+        "validationErrors": "以下のフィールドに不備があります：",
+        "back": "← 店舗一覧へ"
+      }
+    },
+    "relations": {
+      "signatureDrinks": "看板ドリンク",
+      "cities": "進出都市",
+      "companies": "親会社関連",
+      "relatedBrands": "関連ブランド",
+      "relatedCities": "関連都市",
+      "relatedDrinks": "関連ドリンク",
+      "isSignature": "看板",
+      "addRelation": "+ 関連を追加",
+      "remove": "削除",
+      "empty": "まだ関連がありません。",
+      "relevance": "関連度",
+      "relevanceLevel": {
+        "primary": "主要",
+        "secondary": "副次",
+        "mentioned": "言及のみ"
+      },
+      "brandCityStatus": {
+        "active": "営業中",
+        "exited": "撤退",
+        "rumored": "進出の噂"
+      },
+      "companyRelation": {
+        "owner": "所有者",
+        "parent": "親会社",
+        "licensor": "ライセンサー",
+        "franchisor": "フランチャイザー",
+        "investor": "投資家",
+        "former_owner": "前所有者"
+      },
+      "since": "開始",
+      "until": "終了",
+      "untilHint": "空欄なら有効中。",
+      "enteredAt": "進出日"
     },
     "soon": "（近日公開）"
   },

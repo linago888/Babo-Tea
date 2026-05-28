@@ -310,6 +310,8 @@
       "news": "新聞",
       "sources": "新聞來源",
       "taxonomies": "受控詞彙",
+      "companies": "母公司",
+      "stores": "門市",
       "quality": "內容品質",
       "qualityDashboard": "品質儀表板",
       "orphans": "孤兒實體",
@@ -716,6 +718,134 @@
         "validationErrors": "以下欄位缺失或格式錯誤：",
         "back": "← 回詞彙列表"
       }
+    },
+    "companies": {
+      "listTitle": "母公司",
+      "listSubtitle": "追蹤中 {count} 家母公司 / 集團。",
+      "create": "新增公司",
+      "search": "依名稱或 slug 搜尋…",
+      "table": {
+        "name": "名稱",
+        "country": "國家",
+        "founded": "成立",
+        "ticker": "股票代號",
+        "website": "官網",
+        "status": "狀態",
+        "completeness": "完整度",
+        "updated": "最後更新"
+      },
+      "status": { "draft": "草稿", "published": "已發布", "archived": "已封存" },
+      "edit": {
+        "title": "編輯公司",
+        "createTitle": "新增公司",
+        "notFound": "找不到此公司",
+        "tabs": { "general": "基本資料", "i18n": "多語翻譯" },
+        "fields": {
+          "slug": "Slug",
+          "slugHint": "URL 識別碼。僅限小寫字母、數字、連字號。",
+          "countryCode": "國家（ISO Alpha-2）",
+          "foundedYear": "成立年份",
+          "stockTicker": "股票代號",
+          "stockTickerHint": "例如 TWSE:2729、NASDAQ:STBX。",
+          "website": "官方網站",
+          "status": "狀態",
+          "nameI18n": "公司名稱",
+          "descriptionI18n": "公司介紹"
+        },
+        "saveButton": "儲存",
+        "saving": "儲存中…",
+        "saved": "儲存成功",
+        "deleteButton": "封存（不刪除）",
+        "deleteConfirm": "確定要封存此公司？品牌關聯不會受影響。",
+        "validationErrors": "以下欄位缺失或格式錯誤：",
+        "back": "← 回公司列表"
+      }
+    },
+    "stores": {
+      "listTitle": "門市",
+      "listSubtitle": "追蹤中 {count} 家門市。",
+      "create": "新增門市",
+      "search": "依品牌、城市或地址搜尋…",
+      "table": {
+        "brand": "品牌",
+        "city": "城市",
+        "address": "地址",
+        "flagship": "旗艦店",
+        "franchise": "加盟",
+        "openedAt": "開業",
+        "status": "狀態",
+        "updated": "最後更新"
+      },
+      "status": { "draft": "草稿", "published": "已發布", "archived": "已封存" },
+      "edit": {
+        "title": "編輯門市",
+        "createTitle": "新增門市",
+        "notFound": "找不到此門市",
+        "tabs": { "general": "基本資料", "i18n": "多語地址", "advanced": "進階" },
+        "fields": {
+          "brandId": "品牌",
+          "cityId": "城市",
+          "lat": "緯度",
+          "lng": "經度",
+          "coordHint": "WGS84 十進位制，6 位小數。",
+          "phone": "電話",
+          "phoneHint": "E.164 格式，例如 +886-2-12345678。",
+          "openingHours": "營業時間（JSON）",
+          "openingHoursHint": "schema.org OpeningHoursSpecification 格式。",
+          "isFlagship": "旗艦店",
+          "franchise": "加盟店",
+          "openedAt": "開業日",
+          "closedAt": "歇業日",
+          "closedAtHint": "留空代表仍營業。",
+          "externalIds": "外部 ID（JSON）",
+          "externalIdsHint": "{ google_place_id, yelp_id, naver_id, ... }",
+          "status": "狀態",
+          "nameI18n": "分店名稱（選填）",
+          "addressI18n": "地址"
+        },
+        "saveButton": "儲存",
+        "saving": "儲存中…",
+        "saved": "儲存成功",
+        "deleteButton": "封存（不刪除）",
+        "deleteConfirm": "確定要封存此門市？",
+        "validationErrors": "以下欄位缺失或格式錯誤：",
+        "back": "← 回門市列表"
+      }
+    },
+    "relations": {
+      "signatureDrinks": "招牌飲品",
+      "cities": "進駐城市",
+      "companies": "母公司關聯",
+      "relatedBrands": "相關品牌",
+      "relatedCities": "相關城市",
+      "relatedDrinks": "相關飲品",
+      "isSignature": "招牌",
+      "addRelation": "+ 新增關聯",
+      "remove": "移除",
+      "empty": "尚無關聯。",
+      "relevance": "關聯程度",
+      "relevanceLevel": {
+        "primary": "主角",
+        "secondary": "配角",
+        "mentioned": "順帶提及"
+      },
+      "brandCityStatus": {
+        "active": "營運中",
+        "exited": "已撤出",
+        "rumored": "傳聞進駐"
+      },
+      "companyRelation": {
+        "owner": "所有人",
+        "parent": "母公司",
+        "licensor": "授權方",
+        "franchisor": "加盟總部",
+        "investor": "投資人",
+        "former_owner": "前任所有人"
+      },
+      "since": "自",
+      "until": "至",
+      "untilHint": "留空代表仍有效。",
+      "enteredAt": "進駐日"
     },
     "soon": "（即將推出）"
   },

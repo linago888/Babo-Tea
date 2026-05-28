@@ -310,6 +310,8 @@
       "news": "News",
       "sources": "Sources",
       "taxonomies": "Taxonomies",
+      "companies": "Companies",
+      "stores": "Stores",
       "quality": "Quality",
       "qualityDashboard": "Quality dashboard",
       "orphans": "Orphans",
@@ -716,6 +718,134 @@
         "validationErrors": "Some required fields are missing or invalid:",
         "back": "← Back to taxonomies"
       }
+    },
+    "companies": {
+      "listTitle": "Companies",
+      "listSubtitle": "{count} companies / groups tracked.",
+      "create": "New company",
+      "search": "Search by name or slug…",
+      "table": {
+        "name": "Name",
+        "country": "Country",
+        "founded": "Founded",
+        "ticker": "Ticker",
+        "website": "Website",
+        "status": "Status",
+        "completeness": "Completeness",
+        "updated": "Updated"
+      },
+      "status": { "draft": "Draft", "published": "Published", "archived": "Archived" },
+      "edit": {
+        "title": "Edit company",
+        "createTitle": "New company",
+        "notFound": "Company not found",
+        "tabs": { "general": "General", "i18n": "Localized" },
+        "fields": {
+          "slug": "Slug",
+          "slugHint": "URL identifier. Lowercase letters, digits, hyphens only.",
+          "countryCode": "Country (ISO Alpha-2)",
+          "foundedYear": "Founded year",
+          "stockTicker": "Stock ticker",
+          "stockTickerHint": "e.g. TWSE:2729, NASDAQ:STBX.",
+          "website": "Official website",
+          "status": "Status",
+          "nameI18n": "Company name",
+          "descriptionI18n": "Description"
+        },
+        "saveButton": "Save",
+        "saving": "Saving…",
+        "saved": "Saved",
+        "deleteButton": "Archive (soft delete)",
+        "deleteConfirm": "Archive this company? Brand relations won't be affected.",
+        "validationErrors": "Some required fields are missing or invalid:",
+        "back": "← Back to companies"
+      }
+    },
+    "stores": {
+      "listTitle": "Stores",
+      "listSubtitle": "{count} stores tracked.",
+      "create": "New store",
+      "search": "Search by brand, city, or address…",
+      "table": {
+        "brand": "Brand",
+        "city": "City",
+        "address": "Address",
+        "flagship": "Flagship",
+        "franchise": "Franchise",
+        "openedAt": "Opened",
+        "status": "Status",
+        "updated": "Updated"
+      },
+      "status": { "draft": "Draft", "published": "Published", "archived": "Archived" },
+      "edit": {
+        "title": "Edit store",
+        "createTitle": "New store",
+        "notFound": "Store not found",
+        "tabs": { "general": "General", "i18n": "Localized address", "advanced": "Advanced" },
+        "fields": {
+          "brandId": "Brand",
+          "cityId": "City",
+          "lat": "Latitude",
+          "lng": "Longitude",
+          "coordHint": "WGS84 decimal, 6 decimal places.",
+          "phone": "Phone",
+          "phoneHint": "E.164 format, e.g. +886-2-12345678.",
+          "openingHours": "Opening hours (JSON)",
+          "openingHoursHint": "schema.org OpeningHoursSpecification shape.",
+          "isFlagship": "Flagship store",
+          "franchise": "Franchise",
+          "openedAt": "Opened at",
+          "closedAt": "Closed at",
+          "closedAtHint": "Leave blank if still operating.",
+          "externalIds": "External IDs (JSON)",
+          "externalIdsHint": "{ google_place_id, yelp_id, naver_id, ... }",
+          "status": "Status",
+          "nameI18n": "Branch name (optional)",
+          "addressI18n": "Address"
+        },
+        "saveButton": "Save",
+        "saving": "Saving…",
+        "saved": "Saved",
+        "deleteButton": "Archive (soft delete)",
+        "deleteConfirm": "Archive this store?",
+        "validationErrors": "Some required fields are missing or invalid:",
+        "back": "← Back to stores"
+      }
+    },
+    "relations": {
+      "signatureDrinks": "Signature drinks",
+      "cities": "Cities present",
+      "companies": "Parent companies",
+      "relatedBrands": "Related brands",
+      "relatedCities": "Related cities",
+      "relatedDrinks": "Related drinks",
+      "isSignature": "Signature",
+      "addRelation": "+ Add relation",
+      "remove": "Remove",
+      "empty": "No relations yet.",
+      "relevance": "Relevance",
+      "relevanceLevel": {
+        "primary": "Primary",
+        "secondary": "Secondary",
+        "mentioned": "Mentioned"
+      },
+      "brandCityStatus": {
+        "active": "Active",
+        "exited": "Exited",
+        "rumored": "Rumored"
+      },
+      "companyRelation": {
+        "owner": "Owner",
+        "parent": "Parent",
+        "licensor": "Licensor",
+        "franchisor": "Franchisor",
+        "investor": "Investor",
+        "former_owner": "Former owner"
+      },
+      "since": "Since",
+      "until": "Until",
+      "untilHint": "Leave blank if still effective.",
+      "enteredAt": "Entered"
     },
     "soon": "(coming soon)"
   },

@@ -19,5 +19,8 @@ export default async function AdminBrandNewPage() {
     label: `${pickI18n(c.nameI18n, locale) || c.id} · ${localizeCountry(c.countryCode, locale)}`,
   }));
 
-  return <BrandForm mode="create" initial={{}} cities={cityOptions} />;
+  // 在 create mode 下 relation tabs 不顯示，可以傳空陣列
+  return (
+    <BrandForm mode="create" initial={{}} cities={cityOptions} drinks={[]} companies={[]} />
+  );
 }

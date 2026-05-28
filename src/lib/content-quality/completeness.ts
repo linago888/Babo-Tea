@@ -294,6 +294,45 @@ export function scoreDrink(d: DrinkForScoring) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Company
+// ─────────────────────────────────────────────────────────────
+
+export interface CompanyForScoring {
+  nameI18n: unknown;
+  descriptionI18n?: unknown;
+  countryCode?: string | null;
+  foundedYear?: number | null;
+  stockTicker?: string | null;
+  website?: string | null;
+  brandCompanies?: Array<unknown>;
+}
+
+export function scoreCompany(c: CompanyForScoring) {
+  const checks: Check[] = [
+    ...routing.locales.map((loc) => ({
+      label: `name_i18n[${loc}]`,
+      weight: 3,
+      filled: hasI18nLocale(c.nameI18n, loc),
+    })),
+    ...routing.locales.map((loc) => ({
+      label: `description_i18n[${loc}]`,
+      weight: 4,
+      filled: hasI18nLocale(c.descriptionI18n, loc),
+    })),
+    { label: "country_code", weight: 4, filled: !!c.countryCode },
+    { label: "founded_year", weight: 4, filled: !!c.foundedYear },
+    { label: "stock_ticker", weight: 3, filled: !!c.stockTicker },
+    { label: "website", weight: 4, filled: !!c.website },
+    {
+      label: "≥1 brand owned/parented",
+      weight: 10,
+      filled: (c.brandCompanies?.length ?? 0) > 0,
+    },
+  ];
+  return score(checks);
+}
+
+// ─────────────────────────────────────────────────────────────
 // News
 // ─────────────────────────────────────────────────────────────
 
