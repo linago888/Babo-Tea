@@ -41,7 +41,8 @@ export const news: NewsSeed[] = [
     },
     category: "EXPANSION",
     sourceSlug: "global-boba-graph-editorial",
-    sourceUrl: "https://babo-tea.vercel.app/news/chagee-flagship-los-angeles-2026",
+    // 自家編輯部原創 — 無外部原文，UI 不渲染「Read original ↗」連結
+    sourceUrl: "",
     publishedDaysAgo: 3,
     relatedBrands: [{ slug: "chagee", relevance: "PRIMARY" }],
     relatedCities: [{ slug: "los-angeles", relevance: "PRIMARY" }],
@@ -156,7 +157,8 @@ export const news: NewsSeed[] = [
     },
     category: "TREND",
     sourceSlug: "global-boba-graph-editorial",
-    sourceUrl: "https://babo-tea.vercel.app/news/oat-milk-trend",
+    // 自家編輯部原創 — 無外部原文
+    sourceUrl: "",
     publishedDaysAgo: 22,
     relatedBrands: [
       { slug: "chagee", relevance: "MENTIONED" },
