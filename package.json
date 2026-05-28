@@ -16,6 +16,8 @@
     "verify:stores": "tsx --env-file=.env.local scripts/verify-stores.ts",
     "verify:metrics": "tsx --env-file=.env.local scripts/verify-metrics.ts",
     "metrics:run": "tsx --env-file=.env.local scripts/metrics-job.ts",
+    "quality:run": "tsx --env-file=.env.local scripts/content-quality-job.ts",
+    "verify:quality": "tsx --env-file=.env.local scripts/verify-quality.ts",
     "seed": "tsx --env-file=.env.local prisma/seed/index.ts"
   },
   "dependencies": {
