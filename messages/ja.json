@@ -12,10 +12,35 @@
   },
   "home": {
     "headline": "世界中のタピオカブランド・都市・ドリンク・ニュースの構造化データプラットフォーム。",
-    "lede": "SEO コンテンツデータベースから始め、ナレッジグラフ、AI 検索、業界インテリジェンス製品へと拡張します。",
+    "lede": "世界のタピオカブランド・都市ガイド・ドリンク事典・業界ニュースを構造化して提供。一般ファンと業界読者の両方に。",
     "explore_brands": "ブランドを見る",
     "explore_cities": "都市を見る",
-    "explore_drinks": "ドリンクを見る"
+    "explore_drinks": "ドリンクを見る",
+    "metrics": {
+      "brands": "追跡ブランド",
+      "cities": "都市市場",
+      "drinks": "ドリンク登録数",
+      "news": "業界ニュース"
+    },
+    "sections": {
+      "latestNews": "業界の最新動向",
+      "featuredBrands": "注目ブランド",
+      "popularCities": "最も活発な市場",
+      "trendingDrinks": "トレンドドリンク",
+      "newsletter": "情報を逃さない"
+    },
+    "viewAll": {
+      "news": "すべてのニュース →",
+      "brands": "すべてのブランド →",
+      "cities": "すべての都市 →",
+      "drinks": "すべてのドリンク →"
+    },
+    "newsletter": {
+      "blurb": "世界のタピオカ業界のブランド展開、新商品、都市レベルの変化を毎週まとめてお届け。",
+      "placeholder": "your@email.com",
+      "subscribe": "購読する",
+      "soon": "ニュースレター購読は近日公開 — Phase 3 リリースとともに。"
+    }
   },
   "brandList": {
     "title": "ブランド",

@@ -12,10 +12,35 @@
   },
   "home": {
     "headline": "A structured data platform for bubble tea brands, cities, drinks and news worldwide.",
-    "lede": "Starting as an SEO content database, growing into a knowledge graph, AI search and industry intelligence product.",
+    "lede": "Structured data on global bubble tea brands, cities, drinks and industry news — built for both enthusiasts and the trade.",
     "explore_brands": "Explore brands",
     "explore_cities": "Explore cities",
-    "explore_drinks": "Explore drinks"
+    "explore_drinks": "Explore drinks",
+    "metrics": {
+      "brands": "Brands tracked",
+      "cities": "City markets",
+      "drinks": "Drink entries",
+      "news": "News stories"
+    },
+    "sections": {
+      "latestNews": "Latest from the industry",
+      "featuredBrands": "Featured brands",
+      "popularCities": "Most active markets",
+      "trendingDrinks": "Trending drinks",
+      "newsletter": "Stay informed"
+    },
+    "viewAll": {
+      "news": "All news →",
+      "brands": "All brands →",
+      "cities": "All cities →",
+      "drinks": "All drinks →"
+    },
+    "newsletter": {
+      "blurb": "Weekly digest covering brand expansions, new launches and city-level shifts across the global bubble tea industry.",
+      "placeholder": "your@email.com",
+      "subscribe": "Subscribe",
+      "soon": "Newsletter signup coming soon — coming with our Phase 3 launch."
+    }
   },
   "brandList": {
     "title": "Brands",
