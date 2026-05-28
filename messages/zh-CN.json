@@ -1,11 +1,16 @@
 {
   "site": {
     "name": "Global Boba Graph",
-    "tagline": "全球珍奶知识与产业媒体"
+    "tagline": "全球珍奶知识与产业媒体",
+    "description": "探索全球珍珠奶茶品牌、城市指南、饮品百科与产业新闻。结构化、可搜索，同时服务普通爱好者与产业读者。"
   },
   "home": {
     "headline": "全球珍珠奶茶品牌、城市、饮品与新闻的结构化数据平台",
     "lede": "以 SEO 内容数据库起步，逐步扩充成知识图谱、AI 搜索与产业情报产品。",
     "scaffold_note": "Day 1 scaffold 完成。下一步：依 data-model.md 建表并 seed vertical slice。"
+  },
+  "languageSwitcher": {
+    "label": "语言",
+    "current": "当前语言"
   }
 }

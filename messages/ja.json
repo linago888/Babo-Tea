@@ -1,11 +1,16 @@
 {
   "site": {
     "name": "Global Boba Graph",
-    "tagline": "世界のタピオカ・ナレッジ＆業界メディア"
+    "tagline": "世界のタピオカ・ナレッジ＆業界メディア",
+    "description": "世界中のタピオカブランド・都市ガイド・ドリンク事典・業界ニュースを構造化して提供。一般ファンと業界読者の両方に。"
   },
   "home": {
     "headline": "世界中のタピオカブランド・都市・ドリンク・ニュースの構造化データプラットフォーム。",
     "lede": "SEO コンテンツデータベースから始め、ナレッジグラフ、AI 検索、業界インテリジェンス製品へと拡張します。",
     "scaffold_note": "Day 1 scaffold 完了。次は data-model.md に従ってスキーマを実装し、vertical slice を seed します。"
+  },
+  "languageSwitcher": {
+    "label": "言語",
+    "current": "現在の言語"
   }
 }
