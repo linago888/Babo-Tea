@@ -50,7 +50,7 @@ export function AdminSidebar() {
   const groups = useNavGroups();
 
   return (
-    <aside className="hidden border-r border-neutral-200 bg-white md:flex md:w-56 md:flex-col lg:w-60 dark:border-neutral-800 dark:bg-neutral-900">
+    <aside className="hidden border-r border-neutral-200 bg-white sm:flex sm:w-52 sm:flex-col md:w-56 lg:w-60 dark:border-neutral-800 dark:bg-neutral-900">
       <div className="border-b border-neutral-200 px-5 py-5 dark:border-neutral-800">
         <Link href="/admin" className="flex items-center gap-2 text-base font-semibold">
           <span aria-hidden className="inline-block size-3 rounded-full bg-rose-700" />
@@ -104,7 +104,7 @@ export function AdminMobileNav() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-neutral-200 bg-white px-4 py-3 md:hidden dark:border-neutral-800 dark:bg-neutral-900">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-neutral-200 bg-white px-4 py-3 sm:hidden dark:border-neutral-800 dark:bg-neutral-900">
         <button
           type="button"
           aria-label="Open menu"
@@ -144,7 +144,7 @@ export function AdminMobileNav() {
 
       {/* 抽屜 + 遮罩 */}
       {open ? (
-        <div className="fixed inset-0 z-40 md:hidden">
+        <div className="fixed inset-0 z-40 sm:hidden">
           {/* 背景遮罩 */}
           <button
             type="button"
