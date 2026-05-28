@@ -132,24 +132,6 @@ enum TaxonomyKind {
   @@map("taxonomy_kind")
 }
 
-/// news_* 關聯表的 relevance：區分這篇新聞是「主角」、「重要配角」還是「順帶提到」
-enum RelevanceLevel {
-  PRIMARY   @map("primary")
-  SECONDARY @map("secondary")
-  MENTIONED @map("mentioned")
-
-  @@map("relevance_level")
-}
-
-/// brand_cities.status：品牌在該城市的當前狀態
-enum BrandCityStatus {
-  ACTIVE  @map("active")
-  EXITED  @map("exited")
-  RUMORED @map("rumored")
-
-  @@map("brand_city_status")
-}
-
 // ─────────────────────────────────────────────────────────────
 // Day 1 baseline：保留 HealthCheck（Day 2 已落地，不影響）
 // ─────────────────────────────────────────────────────────────
@@ -248,12 +230,7 @@ model Brand {
   createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  headquartersCity     City?              @relation("BrandHeadquarters", fields: [headquartersCityId], references: [id], onDelete: SetNull)
-  brandDrinks          BrandDrink[]
-  brandCities          BrandCity[]
-  newsBrands           NewsBrand[]
-  similaritiesAsA      BrandSimilarity[]  @relation("BrandSimilarityA")
-  similaritiesAsB      BrandSimilarity[]  @relation("BrandSimilarityB")
+  headquartersCity City? @relation("BrandHeadquarters", fields: [headquartersCityId], references: [id], onDelete: SetNull)
 
   @@index([countryCode])
   @@index([status])
@@ -289,10 +266,7 @@ model City {
   createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  brandsHeadquartered Brand[]     @relation("BrandHeadquarters")
-  brandCities         BrandCity[]
-  drinkCities         DrinkCity[]
-  newsCities          NewsCity[]
+  brandsHeadquartered Brand[] @relation("BrandHeadquarters")
 
   @@index([countryCode])
   @@index([status])
@@ -330,10 +304,6 @@ model Drink {
   createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  brandDrinks BrandDrink[]
-  drinkCities DrinkCity[]
-  newsDrinks  NewsDrink[]
-
   @@index([category])
   @@index([status])
   @@map("drinks")
@@ -367,161 +337,11 @@ model News {
   createdAt             DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt             DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  source     Source      @relation(fields: [sourceId], references: [id], onDelete: Restrict)
-  newsBrands NewsBrand[]
-  newsCities NewsCity[]
-  newsDrinks NewsDrink[]
+  source Source @relation(fields: [sourceId], references: [id], onDelete: Restrict)
 
   @@index([sourceId])
   @@index([category])
   @@index([status])
   @@index([publishedAt(sort: Desc)])
   @@map("news")
-}
-
-// ─────────────────────────────────────────────────────────────
-// §8 關聯表（Day 4）
-// 全部走複合主鍵（PK = 兩個 FK），確保同一對 entity 只能有一筆關聯。
-// ─────────────────────────────────────────────────────────────
-
-/// §8.1 brand_drinks — 品牌的飲品（含招牌）
-/// `local_name_i18n` 蓋掉 drinks.name_i18n（同一款飲品在不同品牌可能有不同命名）
-/// `calories_kcal` / `caffeine_mg` 蓋掉 drinks 上的區間，供品牌實際數值
-model BrandDrink {
-  brandId          String    @map("brand_id") @db.Uuid
-  drinkId          String    @map("drink_id") @db.Uuid
-  isSignature      Boolean   @default(false) @map("is_signature")
-  localNameI18n    Json?     @map("local_name_i18n")
-  priceLocal       Decimal?  @map("price_local") @db.Decimal(10, 2)
-  priceCurrency    String?   @map("price_currency") @db.Char(3)
-  caloriesKcal     Int?      @map("calories_kcal") @db.SmallInt
-  caffeineMg       Int?      @map("caffeine_mg") @db.SmallInt
-  availableMarkets String[]  @default([]) @map("available_markets") /// country_code[]
-  since            DateTime? @db.Date
-  until            DateTime? @db.Date
-  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  drink Drink @relation(fields: [drinkId], references: [id], onDelete: Cascade)
-
-  @@id([brandId, drinkId])
-  @@index([drinkId])
-  @@index([isSignature])
-  @@map("brand_drinks")
-}
-
-/// §8.2 brand_cities — 品牌進入城市
-/// `store_count_cached` 由 stores aggregate 快取（Day 5 加 stores 後接 job）
-model BrandCity {
-  brandId          String          @map("brand_id") @db.Uuid
-  cityId           String          @map("city_id") @db.Uuid
-  enteredAt        DateTime?       @map("entered_at") @db.Date
-  storeCountCached Int?            @map("store_count_cached")
-  status           BrandCityStatus @default(ACTIVE)
-  createdAt        DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  city  City  @relation(fields: [cityId], references: [id], onDelete: Cascade)
-
-  @@id([brandId, cityId])
-  @@index([cityId])
-  @@index([status])
-  @@map("brand_cities")
-}
-
-/// §8.3 news_brands — 新聞 ↔ 品牌
-/// `relevance` 區分主角/配角/順帶；`auto_tagged` 標 AI 抽取，`confirmed_by_user_id` 人工確認後填
-model NewsBrand {
-  newsId            String         @map("news_id") @db.Uuid
-  brandId           String         @map("brand_id") @db.Uuid
-  relevance         RelevanceLevel @default(MENTIONED)
-  autoTagged        Boolean        @default(false) @map("auto_tagged")
-  confirmedByUserId String?        @map("confirmed_by_user_id") @db.Uuid
-  confirmedAt       DateTime?      @map("confirmed_at") @db.Timestamptz(6)
-  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  news  News  @relation(fields: [newsId], references: [id], onDelete: Cascade)
-  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
-
-  @@id([newsId, brandId])
-  @@index([brandId])
-  @@index([relevance])
-  @@map("news_brands")
-}
-
-/// §8.3 news_cities — 新聞 ↔ 城市
-model NewsCity {
-  newsId            String         @map("news_id") @db.Uuid
-  cityId            String         @map("city_id") @db.Uuid
-  relevance         RelevanceLevel @default(MENTIONED)
-  autoTagged        Boolean        @default(false) @map("auto_tagged")
-  confirmedByUserId String?        @map("confirmed_by_user_id") @db.Uuid
-  confirmedAt       DateTime?      @map("confirmed_at") @db.Timestamptz(6)
-  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  news News @relation(fields: [newsId], references: [id], onDelete: Cascade)
-  city City @relation(fields: [cityId], references: [id], onDelete: Cascade)
-
-  @@id([newsId, cityId])
-  @@index([cityId])
-  @@index([relevance])
-  @@map("news_cities")
-}
-
-/// §8.3 news_drinks — 新聞 ↔ 飲品
-model NewsDrink {
-  newsId            String         @map("news_id") @db.Uuid
-  drinkId           String         @map("drink_id") @db.Uuid
-  relevance         RelevanceLevel @default(MENTIONED)
-  autoTagged        Boolean        @default(false) @map("auto_tagged")
-  confirmedByUserId String?        @map("confirmed_by_user_id") @db.Uuid
-  confirmedAt       DateTime?      @map("confirmed_at") @db.Timestamptz(6)
-  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  news  News  @relation(fields: [newsId], references: [id], onDelete: Cascade)
-  drink Drink @relation(fields: [drinkId], references: [id], onDelete: Cascade)
-
-  @@id([newsId, drinkId])
-  @@index([drinkId])
-  @@index([relevance])
-  @@map("news_drinks")
-}
-
-/// §8.4 drink_cities — 城市流行飲品
-/// `seasonality` jsonb shape: { "01": 0.6, ..., "12": 0.4 }（12 個月份權重）
-model DrinkCity {
-  drinkId         String   @map("drink_id") @db.Uuid
-  cityId          String   @map("city_id") @db.Uuid
-  popularityScore Float?   @map("popularity_score") /// 0-100
-  seasonality     Json?
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  drink Drink @relation(fields: [drinkId], references: [id], onDelete: Cascade)
-  city  City  @relation(fields: [cityId], references: [id], onDelete: Cascade)
-
-  @@id([drinkId, cityId])
-  @@index([cityId])
-  @@index([popularityScore(sort: Desc)])
-  @@map("drink_cities")
-}
-
-/// §8.5 brand_similarities — 相似品牌（衍生，每晚 job 重算）
-/// 強制 brandAId < brandBId 避免 (A,B) 與 (B,A) 重複（app 層或 CHECK 約束）
-model BrandSimilarity {
-  brandAId  String   @map("brand_a_id") @db.Uuid
-  brandBId  String   @map("brand_b_id") @db.Uuid
-  score     Float /// 0-1
-  factors   Json? /// { same_price_tier: 1, shared_drinks: 0.6, shared_cities: 0.4, ... }
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  brandA Brand @relation("BrandSimilarityA", fields: [brandAId], references: [id], onDelete: Cascade)
-  brandB Brand @relation("BrandSimilarityB", fields: [brandBId], references: [id], onDelete: Cascade)
-
-  @@id([brandAId, brandBId])
-  @@index([brandBId])
-  @@index([score(sort: Desc)])
-  @@map("brand_similarities")
 }
