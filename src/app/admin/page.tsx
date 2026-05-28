@@ -30,10 +30,10 @@ export default async function AdminIndexPage() {
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {[
           { label: t("overview.cards.brands"), count: brandCount, href: "/brands", admin: "/admin/brands" },
-          { label: t("overview.cards.cities"), count: cityCount, href: "/cities", admin: null },
-          { label: t("overview.cards.drinks"), count: drinkCount, href: "/drinks", admin: null },
-          { label: t("overview.cards.news"), count: newsCount, href: "/news", admin: null },
-          { label: t("overview.cards.sources"), count: sourceCount, href: null, admin: null },
+          { label: t("overview.cards.cities"), count: cityCount, href: "/cities", admin: "/admin/cities" },
+          { label: t("overview.cards.drinks"), count: drinkCount, href: "/drinks", admin: "/admin/drinks" },
+          { label: t("overview.cards.news"), count: newsCount, href: "/news", admin: "/admin/news" },
+          { label: t("overview.cards.sources"), count: sourceCount, href: null, admin: "/admin/sources" },
         ].map((m) => (
           <li
             key={m.label}

@@ -29,11 +29,11 @@ export function AdminSidebar() {
       label: t("content"),
       items: [
         { label: t("brands"), href: "/admin/brands" },
-        { label: t("cities"), href: "/admin/cities", disabled: true },
-        { label: t("drinks"), href: "/admin/drinks", disabled: true },
-        { label: t("news"), href: "/admin/news", disabled: true },
-        { label: t("sources"), href: "/admin/sources", disabled: true },
-        { label: t("taxonomies"), href: "/admin/taxonomies", disabled: true },
+        { label: t("cities"), href: "/admin/cities" },
+        { label: t("drinks"), href: "/admin/drinks" },
+        { label: t("news"), href: "/admin/news" },
+        { label: t("sources"), href: "/admin/sources" },
+        { label: t("taxonomies"), href: "/admin/taxonomies" },
       ],
     },
     {
