@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BrandCard } from "@/components/brand-card";
+import { BrandLogo } from "@/components/brand-logo";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { DrinkChip } from "@/components/drink-chip";
 import { InfoList, InfoRow } from "@/components/info-row";
@@ -146,6 +147,7 @@ export default async function BrandDetailPage({ params }: PageParams) {
     "@type": "Organization",
     name,
     url: `${SITE_URL}/${locale}/brands/${slug}`,
+    ...(brand.logoUrl ? { logo: brand.logoUrl } : {}),
     ...(brand.officialWebsite ? { sameAs: [brand.officialWebsite] } : {}),
     ...(description ? { description } : {}),
     ...(brand.foundedYear ? { foundingDate: String(brand.foundedYear) } : {}),
@@ -171,7 +173,16 @@ export default async function BrandDetailPage({ params }: PageParams) {
       />
 
       {/* ── Hero ── */}
-      <header className="mt-4 mb-8 flex flex-col gap-3 border-b border-neutral-200 pb-8 dark:border-neutral-800">
+      <header className="mt-4 mb-8 flex gap-5 border-b border-neutral-200 pb-8 dark:border-neutral-800">
+        <BrandLogo
+          slug={brand.slug}
+          nameI18n={brand.nameI18n}
+          logoUrl={brand.logoUrl}
+          locale={lc}
+          size="lg"
+          className="mt-1"
+        />
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <h1
             className="text-4xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50"
@@ -207,6 +218,7 @@ export default async function BrandDetailPage({ params }: PageParams) {
               {tag}
             </Badge>
           ))}
+        </div>
         </div>
       </header>
 

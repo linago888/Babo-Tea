@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
+import { BrandLogo } from "@/components/brand-logo";
 import type { Brand, BrandDrink, Drink } from "@/generated/prisma/client";
 import type { Locale } from "@/i18n/routing";
 import { localizeCountry, pickI18n } from "@/lib/i18n-text";
@@ -38,8 +39,15 @@ export async function BrandCard({
         className="group flex h-full flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-5 transition hover:border-neutral-400 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-neutral-600"
         prefetch={false}
       >
-        <header className="flex items-start justify-between gap-3">
-          <div>
+        <header className="flex items-start gap-3">
+          <BrandLogo
+            slug={brand.slug}
+            nameI18n={brand.nameI18n}
+            logoUrl={brand.logoUrl}
+            locale={locale}
+            size="md"
+          />
+          <div className="min-w-0 flex-1">
             <h2 className="text-lg font-semibold leading-tight text-neutral-900 dark:text-neutral-50">
               {name}
             </h2>

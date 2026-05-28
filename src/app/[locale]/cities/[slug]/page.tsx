@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BrandCard } from "@/components/brand-card";
+import { BrandLogo } from "@/components/brand-logo";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { InfoList, InfoRow } from "@/components/info-row";
 import { NewsListItem } from "@/components/news-list-item";
@@ -285,13 +286,20 @@ export default async function CityDetailPage({ params }: PageParams) {
                     <Link
                       href={`/${lc}/brands/${bc.brand.slug}`}
                       prefetch={false}
-                      className="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                      className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition hover:bg-neutral-100 dark:hover:bg-neutral-900"
                     >
-                      <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                      <BrandLogo
+                        slug={bc.brand.slug}
+                        nameI18n={bc.brand.nameI18n}
+                        logoUrl={bc.brand.logoUrl}
+                        locale={lc}
+                        size="sm"
+                      />
+                      <span className="min-w-0 flex-1 truncate font-medium text-neutral-800 dark:text-neutral-200">
                         {pickI18n(bc.brand.nameI18n, lc)}
                       </span>
                       {bc.storeCountCached ? (
-                        <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                        <span className="shrink-0 text-xs text-neutral-500 dark:text-neutral-400">
                           {t("brandDetail.headerStats.totalStores", { count: bc.storeCountCached })}
                         </span>
                       ) : null}
