@@ -202,6 +202,50 @@
     "floral": "花香",
     "roasted": "ロースト"
   },
+  "newsList": {
+    "title": "ニュース",
+    "subtitle": "世界のタピオカ業界 {count, plural, =0 {ニュースなし} other {# 件のニュース}}",
+    "filter": {
+      "category": "カテゴリ",
+      "all": "すべて",
+      "clear": "フィルターをクリア"
+    },
+    "category": {
+      "expansion": "ブランド展開",
+      "launch": "新商品",
+      "franchise_investment": "加盟・投資",
+      "city_market": "都市市場",
+      "trend": "消費トレンド",
+      "supply_chain": "サプライチェーン",
+      "culture": "カルチャー&ライフスタイル"
+    },
+    "scope": {
+      "brand": "ブランド「{name}」関連",
+      "city": "都市「{name}」関連",
+      "drink": "ドリンク「{name}」関連",
+      "clear": "範囲をクリア"
+    },
+    "empty": "条件に合致するニュースがありません。"
+  },
+  "newsDetail": {
+    "notFound": "ニュースが見つかりません",
+    "by": "出典",
+    "publishedAt": "{date} 公開",
+    "aiSummary": {
+      "title": "AI 要約",
+      "reviewed": "編集部レビュー済み",
+      "reviewedOn": "{date} レビュー"
+    },
+    "sections": {
+      "summary": "要約",
+      "body": "本文",
+      "relatedBrands": "関連ブランド",
+      "relatedCities": "関連都市",
+      "relatedDrinks": "関連ドリンク",
+      "source": "出典"
+    },
+    "viewSource": "原文を読む ↗"
+  },
   "relevance": {
     "primary": "主役",
     "secondary": "関連",

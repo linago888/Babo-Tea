@@ -202,6 +202,50 @@
     "floral": "花香",
     "roasted": "焙香"
   },
+  "newsList": {
+    "title": "新聞",
+    "subtitle": "全球珍奶產業 {count, plural, =0 {尚無新聞} other {# 篇新聞}}",
+    "filter": {
+      "category": "分類",
+      "all": "全部",
+      "clear": "清除篩選"
+    },
+    "category": {
+      "expansion": "品牌擴張",
+      "launch": "新品上市",
+      "franchise_investment": "加盟與投資",
+      "city_market": "城市市場",
+      "trend": "消費趨勢",
+      "supply_chain": "供應鏈",
+      "culture": "文化與生活"
+    },
+    "scope": {
+      "brand": "關於品牌「{name}」",
+      "city": "關於城市「{name}」",
+      "drink": "關於飲品「{name}」",
+      "clear": "清除範圍"
+    },
+    "empty": "沒有符合條件的新聞。"
+  },
+  "newsDetail": {
+    "notFound": "找不到此新聞",
+    "by": "來源",
+    "publishedAt": "{date} 發布",
+    "aiSummary": {
+      "title": "AI 摘要",
+      "reviewed": "已由編輯審核",
+      "reviewedOn": "於 {date} 審核"
+    },
+    "sections": {
+      "summary": "摘要",
+      "body": "全文",
+      "relatedBrands": "相關品牌",
+      "relatedCities": "相關城市",
+      "relatedDrinks": "相關飲品",
+      "source": "來源"
+    },
+    "viewSource": "閱讀原文 ↗"
+  },
   "relevance": {
     "primary": "主角",
     "secondary": "重要關聯",

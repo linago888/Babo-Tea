@@ -202,6 +202,50 @@
     "floral": "Floral",
     "roasted": "Roasted"
   },
+  "newsList": {
+    "title": "News",
+    "subtitle": "{count, plural, =0 {No news tracked yet} one {1 story} other {# stories}} from the global bubble tea industry",
+    "filter": {
+      "category": "Category",
+      "all": "All",
+      "clear": "Clear filters"
+    },
+    "category": {
+      "expansion": "Brand expansion",
+      "launch": "New launch",
+      "franchise_investment": "Franchise & investment",
+      "city_market": "City market",
+      "trend": "Consumer trend",
+      "supply_chain": "Supply chain",
+      "culture": "Culture & lifestyle"
+    },
+    "scope": {
+      "brand": "About brand {name}",
+      "city": "About city {name}",
+      "drink": "About drink {name}",
+      "clear": "Clear scope"
+    },
+    "empty": "No news matches these filters."
+  },
+  "newsDetail": {
+    "notFound": "News story not found",
+    "by": "Source",
+    "publishedAt": "Published {date}",
+    "aiSummary": {
+      "title": "AI summary",
+      "reviewed": "Reviewed by editorial",
+      "reviewedOn": "Reviewed {date}"
+    },
+    "sections": {
+      "summary": "Summary",
+      "body": "Full story",
+      "relatedBrands": "Related brands",
+      "relatedCities": "Related cities",
+      "relatedDrinks": "Related drinks",
+      "source": "Source"
+    },
+    "viewSource": "Read original ↗"
+  },
   "relevance": {
     "primary": "Primary",
     "secondary": "Secondary",

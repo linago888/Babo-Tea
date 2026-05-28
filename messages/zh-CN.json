@@ -202,6 +202,50 @@
     "floral": "花香",
     "roasted": "焙香"
   },
+  "newsList": {
+    "title": "新闻",
+    "subtitle": "全球珍奶产业 {count, plural, =0 {暂无新闻} other {# 篇新闻}}",
+    "filter": {
+      "category": "分类",
+      "all": "全部",
+      "clear": "清除筛选"
+    },
+    "category": {
+      "expansion": "品牌扩张",
+      "launch": "新品上市",
+      "franchise_investment": "加盟与投资",
+      "city_market": "城市市场",
+      "trend": "消费趋势",
+      "supply_chain": "供应链",
+      "culture": "文化与生活"
+    },
+    "scope": {
+      "brand": "关于品牌「{name}」",
+      "city": "关于城市「{name}」",
+      "drink": "关于饮品「{name}」",
+      "clear": "清除范围"
+    },
+    "empty": "没有符合条件的新闻。"
+  },
+  "newsDetail": {
+    "notFound": "找不到此新闻",
+    "by": "来源",
+    "publishedAt": "{date} 发布",
+    "aiSummary": {
+      "title": "AI 摘要",
+      "reviewed": "已由编辑审核",
+      "reviewedOn": "于 {date} 审核"
+    },
+    "sections": {
+      "summary": "摘要",
+      "body": "全文",
+      "relatedBrands": "相关品牌",
+      "relatedCities": "相关城市",
+      "relatedDrinks": "相关饮品",
+      "source": "来源"
+    },
+    "viewSource": "阅读原文 ↗"
+  },
   "relevance": {
     "primary": "主角",
     "secondary": "重要关联",
