@@ -76,6 +76,53 @@
     "officialSite": "官方網站",
     "viewAllNews": "查看全部新聞 →"
   },
+  "cityList": {
+    "title": "城市",
+    "subtitle": "全球追蹤中的 {count} 個珍奶市場城市",
+    "filter": {
+      "country": "國家",
+      "maturity": "市場成熟度",
+      "all": "全部",
+      "clear": "清除篩選"
+    },
+    "maturity": {
+      "emerging": "新興",
+      "growing": "成長中",
+      "mature": "成熟",
+      "saturated": "飽和"
+    },
+    "empty": "沒有符合條件的城市。"
+  },
+  "cityCard": {
+    "population": "{count, plural, =0 {} other {人口 #}}",
+    "avgPrice": "均價 {price}",
+    "brands": "{count, plural, =0 {尚無品牌資料} other {# 個品牌}}"
+  },
+  "cityDetail": {
+    "notFound": "找不到此城市",
+    "headerStats": {
+      "country": "國家",
+      "timezone": "時區",
+      "population": "人口 {count}",
+      "avgPrice": "一杯均價 {price}"
+    },
+    "sections": {
+      "overview": "市場概覽",
+      "activeBrands": "活躍品牌",
+      "topDrinks": "熱門飲品",
+      "recentNews": "近期新聞",
+      "headquartered": "總部設立於此的品牌",
+      "basicInfo": "城市資料"
+    },
+    "emptyState": {
+      "brands": "此城市尚未追蹤任何品牌。",
+      "drinks": "尚無熱度資料。",
+      "news": "此城市目前無新聞。",
+      "headquartered": "尚無總部設於此的品牌。"
+    },
+    "popularityScore": "熱度 {score}",
+    "viewAllBrands": "全部品牌 →"
+  },
   "relevance": {
     "primary": "主角",
     "secondary": "重要關聯",

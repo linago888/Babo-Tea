@@ -76,6 +76,53 @@
     "officialSite": "Official site",
     "viewAllNews": "View all news →"
   },
+  "cityList": {
+    "title": "Cities",
+    "subtitle": "{count} cities tracked across global bubble tea markets",
+    "filter": {
+      "country": "Country",
+      "maturity": "Market maturity",
+      "all": "All",
+      "clear": "Clear filters"
+    },
+    "maturity": {
+      "emerging": "Emerging",
+      "growing": "Growing",
+      "mature": "Mature",
+      "saturated": "Saturated"
+    },
+    "empty": "No cities match these filters."
+  },
+  "cityCard": {
+    "population": "{count, plural, =0 {} other {Population #}}",
+    "avgPrice": "Avg. {price}",
+    "brands": "{count, plural, =0 {No brands tracked} one {1 brand} other {# brands}}"
+  },
+  "cityDetail": {
+    "notFound": "City not found",
+    "headerStats": {
+      "country": "Country",
+      "timezone": "Timezone",
+      "population": "Population {count}",
+      "avgPrice": "Avg. cup {price}"
+    },
+    "sections": {
+      "overview": "Market overview",
+      "activeBrands": "Active brands",
+      "topDrinks": "Top drinks",
+      "recentNews": "Recent news",
+      "headquartered": "Brands headquartered here",
+      "basicInfo": "City facts"
+    },
+    "emptyState": {
+      "brands": "No brands tracked in this city yet.",
+      "drinks": "No popularity data yet.",
+      "news": "No news from this city yet.",
+      "headquartered": "No brands headquartered here."
+    },
+    "popularityScore": "Popularity {score}",
+    "viewAllBrands": "All brands →"
+  },
   "relevance": {
     "primary": "Primary",
     "secondary": "Secondary",

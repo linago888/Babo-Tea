@@ -76,6 +76,53 @@
     "officialSite": "公式サイト",
     "viewAllNews": "すべてのニュースを見る →"
   },
+  "cityList": {
+    "title": "都市",
+    "subtitle": "世界中で追跡中のタピオカ市場都市 {count} 件",
+    "filter": {
+      "country": "国",
+      "maturity": "市場成熟度",
+      "all": "すべて",
+      "clear": "フィルターをクリア"
+    },
+    "maturity": {
+      "emerging": "新興",
+      "growing": "成長中",
+      "mature": "成熟",
+      "saturated": "飽和"
+    },
+    "empty": "条件に合致する都市がありません。"
+  },
+  "cityCard": {
+    "population": "{count, plural, =0 {} other {人口 #}}",
+    "avgPrice": "平均 {price}",
+    "brands": "{count, plural, =0 {ブランドデータなし} other {ブランド # 件}}"
+  },
+  "cityDetail": {
+    "notFound": "都市が見つかりません",
+    "headerStats": {
+      "country": "国",
+      "timezone": "タイムゾーン",
+      "population": "人口 {count}",
+      "avgPrice": "1杯平均 {price}"
+    },
+    "sections": {
+      "overview": "市場概要",
+      "activeBrands": "展開ブランド",
+      "topDrinks": "人気ドリンク",
+      "recentNews": "最新ニュース",
+      "headquartered": "本社所在ブランド",
+      "basicInfo": "都市情報"
+    },
+    "emptyState": {
+      "brands": "この都市に追跡中のブランドはまだありません。",
+      "drinks": "人気度データがまだありません。",
+      "news": "この都市からのニュースはまだありません。",
+      "headquartered": "本社所在のブランドはありません。"
+    },
+    "popularityScore": "人気度 {score}",
+    "viewAllBrands": "すべてのブランド →"
+  },
   "relevance": {
     "primary": "主役",
     "secondary": "関連",
