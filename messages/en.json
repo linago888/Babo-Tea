@@ -47,6 +47,40 @@
     "signatureDrinks": "Signature drinks",
     "viewBrand": "View brand"
   },
+  "brandDetail": {
+    "notFound": "Brand not found",
+    "headerStats": {
+      "founded": "Founded {year}",
+      "country": "Country",
+      "totalStores": "{count, plural, =0 {No stores tracked} one {1 store} other {# stores}}",
+      "activeCities": "{count, plural, =0 {No cities} one {1 city} other {# cities}}"
+    },
+    "sections": {
+      "story": "Brand story",
+      "basicInfo": "At a glance",
+      "signatureDrinks": "Signature drinks",
+      "allDrinks": "Other drinks on the menu",
+      "cities": "Active in",
+      "recentNews": "Recent news",
+      "similarBrands": "Similar brands",
+      "parentCompany": "Parent company"
+    },
+    "emptyState": {
+      "drinks": "No drinks tracked yet.",
+      "cities": "Not tracked in any city yet.",
+      "news": "No news mentioning this brand yet.",
+      "similar": "No similarity data yet.",
+      "parent": "No parent company recorded."
+    },
+    "currentSince": "Since {since}",
+    "officialSite": "Official site",
+    "viewAllNews": "View all news →"
+  },
+  "relevance": {
+    "primary": "Primary",
+    "secondary": "Secondary",
+    "mentioned": "Mentioned"
+  },
   "languageSwitcher": {
     "label": "Language",
     "current": "Current language"

@@ -47,6 +47,40 @@
     "signatureDrinks": "招牌飲品",
     "viewBrand": "查看品牌"
   },
+  "brandDetail": {
+    "notFound": "找不到此品牌",
+    "headerStats": {
+      "founded": "成立於 {year}",
+      "country": "國家",
+      "totalStores": "{count, plural, =0 {尚無門店資料} other {# 家門店}}",
+      "activeCities": "{count, plural, =0 {尚未進入任何城市} other {# 個城市}}"
+    },
+    "sections": {
+      "story": "品牌故事",
+      "basicInfo": "基本資料",
+      "signatureDrinks": "招牌飲品",
+      "allDrinks": "其他菜單飲品",
+      "cities": "佈局城市",
+      "recentNews": "近期新聞",
+      "similarBrands": "相似品牌",
+      "parentCompany": "母公司 / 集團"
+    },
+    "emptyState": {
+      "drinks": "尚未追蹤任何飲品。",
+      "cities": "尚未追蹤任何城市。",
+      "news": "尚未有提及此品牌的新聞。",
+      "similar": "尚無相似品牌數據。",
+      "parent": "未記錄母公司資訊。"
+    },
+    "currentSince": "{since} 起",
+    "officialSite": "官方網站",
+    "viewAllNews": "查看全部新聞 →"
+  },
+  "relevance": {
+    "primary": "主角",
+    "secondary": "重要關聯",
+    "mentioned": "被提及"
+  },
   "languageSwitcher": {
     "label": "語言",
     "current": "目前語言"

@@ -47,6 +47,40 @@
     "signatureDrinks": "看板メニュー",
     "viewBrand": "ブランドを見る"
   },
+  "brandDetail": {
+    "notFound": "ブランドが見つかりません",
+    "headerStats": {
+      "founded": "{year} 年創業",
+      "country": "国",
+      "totalStores": "{count, plural, =0 {店舗データなし} other {店舗 # 件}}",
+      "activeCities": "{count, plural, =0 {進出都市なし} other {# 都市}}"
+    },
+    "sections": {
+      "story": "ブランドストーリー",
+      "basicInfo": "基本情報",
+      "signatureDrinks": "看板メニュー",
+      "allDrinks": "その他のメニュー",
+      "cities": "展開都市",
+      "recentNews": "最新ニュース",
+      "similarBrands": "類似ブランド",
+      "parentCompany": "親会社 / グループ"
+    },
+    "emptyState": {
+      "drinks": "ドリンク情報がまだ登録されていません。",
+      "cities": "都市情報がまだ登録されていません。",
+      "news": "このブランドに関するニュースはまだありません。",
+      "similar": "類似ブランドのデータがまだありません。",
+      "parent": "親会社情報は記録されていません。"
+    },
+    "currentSince": "{since} から",
+    "officialSite": "公式サイト",
+    "viewAllNews": "すべてのニュースを見る →"
+  },
+  "relevance": {
+    "primary": "主役",
+    "secondary": "関連",
+    "mentioned": "言及"
+  },
   "languageSwitcher": {
     "label": "言語",
     "current": "現在の言語"
