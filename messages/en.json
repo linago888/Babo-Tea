@@ -294,5 +294,21 @@
   },
   "theme": {
     "label": "Toggle theme"
+  },
+  "search": {
+    "title": "Search",
+    "placeholder": "Search brands, cities, drinks, news…",
+    "submit": "Search",
+    "empty": "No results for {q}.",
+    "promptEmpty": "Type a query above — brand names, city names, drink names, news titles.",
+    "resultsFor": "Results for {q}",
+    "noResultsHint": "Try a shorter query or browse {brands}, {cities}, {drinks}, {news}.",
+    "kinds": {
+      "brand": "Brands",
+      "city": "Cities",
+      "drink": "Drinks",
+      "news": "News"
+    },
+    "count": "{count, plural, =0 {No matches} one {1 match} other {# matches}}"
   }
 }

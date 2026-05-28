@@ -43,6 +43,14 @@ export async function SiteHeader({ locale }: { locale: Locale }) {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
+          <Link
+            href={`/${locale}/search`}
+            aria-label={t("search.title")}
+            title={t("search.title")}
+            className="flex size-9 items-center justify-center rounded-md text-base text-neutral-600 transition hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-50"
+          >
+            🔍
+          </Link>
           <LanguageSwitcher />
           <ThemeToggle />
         </div>

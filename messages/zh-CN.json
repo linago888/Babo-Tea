@@ -294,5 +294,21 @@
   },
   "theme": {
     "label": "切换主题"
+  },
+  "search": {
+    "title": "搜索",
+    "placeholder": "搜索品牌、城市、饮品、新闻…",
+    "submit": "搜索",
+    "empty": "找不到「{q}」的结果。",
+    "promptEmpty": "输入关键字 — 品牌名、城市名、饮品名、新闻标题。",
+    "resultsFor": "「{q}」的搜索结果",
+    "noResultsHint": "试试较短的关键字，或浏览 {brands}、{cities}、{drinks}、{news}。",
+    "kinds": {
+      "brand": "品牌",
+      "city": "城市",
+      "drink": "饮品",
+      "news": "新闻"
+    },
+    "count": "{count, plural, =0 {无结果} other {# 条结果}}"
   }
 }

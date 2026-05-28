@@ -294,5 +294,21 @@
   },
   "theme": {
     "label": "テーマ切替"
+  },
+  "search": {
+    "title": "検索",
+    "placeholder": "ブランド・都市・ドリンク・ニュースを検索…",
+    "submit": "検索",
+    "empty": "「{q}」の検索結果はありません。",
+    "promptEmpty": "キーワードを入力 — ブランド名・都市名・ドリンク名・ニュースタイトル。",
+    "resultsFor": "「{q}」の検索結果",
+    "noResultsHint": "短いキーワードを試すか、{brands}、{cities}、{drinks}、{news} を閲覧してください。",
+    "kinds": {
+      "brand": "ブランド",
+      "city": "都市",
+      "drink": "ドリンク",
+      "news": "ニュース"
+    },
+    "count": "{count, plural, =0 {結果なし} other {# 件の結果}}"
   }
 }

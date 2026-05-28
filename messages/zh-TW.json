@@ -294,5 +294,21 @@
   },
   "theme": {
     "label": "切換主題"
+  },
+  "search": {
+    "title": "搜尋",
+    "placeholder": "搜尋品牌、城市、飲品、新聞…",
+    "submit": "搜尋",
+    "empty": "找不到「{q}」的結果。",
+    "promptEmpty": "輸入關鍵字 — 品牌名、城市名、飲品名、新聞標題。",
+    "resultsFor": "「{q}」的搜尋結果",
+    "noResultsHint": "試試較短的關鍵字，或瀏覽 {brands}、{cities}、{drinks}、{news}。",
+    "kinds": {
+      "brand": "品牌",
+      "city": "城市",
+      "drink": "飲品",
+      "news": "新聞"
+    },
+    "count": "{count, plural, =0 {無結果} other {# 筆結果}}"
   }
 }
