@@ -69,6 +69,7 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
     path: `/drinks/${slug}`,
     title: name,
     description: description || undefined,
+    og: { kind: "drink", slug },
   });
 }
 
