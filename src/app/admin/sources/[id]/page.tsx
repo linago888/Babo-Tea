@@ -25,6 +25,8 @@ export default async function AdminSourceEditPage({
     credibilityScore: source.credibilityScore !== null ? String(source.credibilityScore) : "",
     paywall: source.paywall,
     notes: source.notes ?? "",
+    rssFeedUrl: source.rssFeedUrl ?? "",
+    lastCrawledAt: source.lastCrawledAt ? source.lastCrawledAt.toISOString() : null,
     status: source.status,
   };
 

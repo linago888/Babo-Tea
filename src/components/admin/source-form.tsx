@@ -23,6 +23,8 @@ type SourceFormValues = {
   credibilityScore: string;
   paywall: boolean;
   notes: string;
+  rssFeedUrl: string;
+  lastCrawledAt: string | null; // ISO string for display only; not editable
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
 };
 
@@ -55,8 +57,19 @@ function buildInitial(initial: SourceFormInitial): SourceFormValues {
     credibilityScore: initial.credibilityScore ?? "",
     paywall: initial.paywall ?? false,
     notes: initial.notes ?? "",
+    rssFeedUrl: initial.rssFeedUrl ?? "",
+    lastCrawledAt: initial.lastCrawledAt ?? null,
     status: (initial.status as SourceFormValues["status"]) ?? "PUBLISHED",
   };
+}
+
+interface IngestSummary {
+  sourceId: string;
+  sourceSlug: string;
+  itemsInFeed: number;
+  created: number;
+  skipped: number;
+  errors: Array<{ url: string; message: string }>;
 }
 
 export default function SourceForm({
@@ -110,6 +123,7 @@ export default function SourceForm({
       credibilityScore: values.credibilityScore.trim() ? Number(values.credibilityScore) : null,
       paywall: values.paywall,
       notes: values.notes.trim() || null,
+      rssFeedUrl: values.rssFeedUrl.trim() || null,
       status: values.status,
     };
 
@@ -343,6 +357,26 @@ export default function SourceForm({
               className={`${inputClass} resize-y sm:col-span-2`}
             />
           </Field>
+
+          {/* RSS feed — sm:col-span-2 跨整列 */}
+          <div className="sm:col-span-2">
+            <Field label={tFields("rssFeedUrl")} hint={tFields("rssFeedUrlHint")}>
+              <input
+                type="url"
+                value={values.rssFeedUrl}
+                onChange={(e) => update("rssFeedUrl", e.target.value)}
+                placeholder="https://example.com/feed.xml"
+                className={inputClass}
+              />
+            </Field>
+            {mode === "edit" && values.rssFeedUrl.trim() ? (
+              <RssIngestPanel
+                sourceId={sourceId!}
+                lastCrawledAt={values.lastCrawledAt}
+                tFields={tFields}
+              />
+            ) : null}
+          </div>
         </div>
       ) : null}
 
@@ -369,6 +403,96 @@ export default function SourceForm({
         </div>
       ) : null}
     </form>
+  );
+}
+
+function RssIngestPanel({
+  sourceId,
+  lastCrawledAt,
+  tFields,
+}: {
+  sourceId: string;
+  lastCrawledAt: string | null;
+  tFields: (key: string) => string;
+}) {
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<IngestSummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run() {
+    setRunning(true);
+    setResult(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/news/ingest-rss", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sourceId }),
+      });
+      const data = (await res.json()) as
+        | { ok: true; summaries: IngestSummary[] }
+        | { ok: false; error?: string };
+      if (!data.ok) {
+        setError("error" in data && data.error ? data.error : "Ingest failed");
+      } else {
+        setResult(data.summaries[0] ?? null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  return (
+    <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50/60 p-3 text-xs dark:border-emerald-900 dark:bg-emerald-950/30">
+      <div className="flex items-center justify-between gap-2">
+        <div className="space-y-0.5">
+          <p className="font-medium text-emerald-900 dark:text-emerald-100">
+            {tFields("rssIngestTitle")}
+          </p>
+          {lastCrawledAt ? (
+            <p className="text-emerald-700 dark:text-emerald-300">
+              {tFields("rssLastCrawled")}: {new Date(lastCrawledAt).toLocaleString()}
+            </p>
+          ) : (
+            <p className="text-emerald-700 dark:text-emerald-300">
+              {tFields("rssNeverCrawled")}
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={run}
+          disabled={running}
+          className="shrink-0 rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-800 disabled:opacity-50 dark:bg-emerald-700 dark:hover:bg-emerald-600"
+        >
+          {running ? tFields("rssIngestRunning") : tFields("rssIngestNow")}
+        </button>
+      </div>
+      {error ? (
+        <p className="mt-2 text-rose-700 dark:text-rose-400">⚠ {error}</p>
+      ) : null}
+      {result ? (
+        <div className="mt-2 text-emerald-800 dark:text-emerald-200">
+          <p>
+            ✓ {tFields("rssIngestResult", )} feed={result.itemsInFeed} ·
+            created={result.created} · skipped={result.skipped}{" "}
+            {result.errors.length > 0 ? `· errors=${result.errors.length}` : ""}
+          </p>
+          {result.errors.length > 0 ? (
+            <ul className="mt-1 list-inside list-disc text-rose-700 dark:text-rose-300">
+              {result.errors.slice(0, 5).map((e, i) => (
+                <li key={i} className="break-all">
+                  <span className="font-mono">{e.url}</span> — {e.message}
+                </li>
+              ))}
+              {result.errors.length > 5 ? <li>...及 {result.errors.length - 5} 個其他錯誤</li> : null}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

@@ -257,6 +257,9 @@ model Source {
   paywall          Boolean      @default(false)
   notes            String?
   status           EntityStatus @default(PUBLISHED)
+  // Phase 5F — RSS auto-ingest
+  rssFeedUrl       String?      @map("rss_feed_url") /// RSS/Atom feed URL；ingest job 從這拉新文章
+  lastCrawledAt    DateTime?    @map("last_crawled_at") @db.Timestamptz(6) /// 最近一次成功跑完 RSS ingest 的時間
   createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 

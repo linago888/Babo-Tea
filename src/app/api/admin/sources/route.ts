@@ -16,6 +16,7 @@ const CreateSchema = z.object({
   credibilityScore: z.number().int().min(0).max(100).optional().nullable(),
   paywall: z.boolean().default(false),
   notes: z.string().optional().nullable(),
+  rssFeedUrl: z.string().url().optional().or(z.literal("")).nullable(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).default("PUBLISHED"),
 });
 
@@ -70,6 +71,7 @@ export async function POST(req: Request) {
       credibilityScore: data.credibilityScore ?? null,
       paywall: data.paywall,
       notes: data.notes || null,
+      rssFeedUrl: data.rssFeedUrl || null,
       status: data.status,
     },
     select: { id: true, slug: true },
