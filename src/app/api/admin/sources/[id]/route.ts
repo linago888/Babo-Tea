@@ -91,18 +91,47 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   return Response.json({ ok: true, source: updated });
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+/**
+ * DELETE /api/admin/sources/[id]
+ *
+ * 預設：soft delete（status = ARCHIVED）
+ * `?hard=true`：硬刪除。但若有 news 引用此 source 會回 409 + newsCount，
+ *               讓 UI 提示「請先處理這些新聞」。
+ */
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAdminAuthorized())) {
     return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
-  const existing = await prisma.source.findUnique({ where: { id }, select: { id: true } });
+  const existing = await prisma.source.findUnique({ where: { id }, select: { id: true, slug: true } });
   if (!existing) {
     return Response.json({ ok: false, error: "Source not found" }, { status: 404 });
   }
 
-  await prisma.source.update({ where: { id }, data: { status: "ARCHIVED" } });
+  const url = new URL(req.url);
+  const hard = url.searchParams.get("hard") === "true";
 
-  return Response.json({ ok: true });
+  if (!hard) {
+    // 預設 soft delete
+    await prisma.source.update({ where: { id }, data: { status: "ARCHIVED" } });
+    return Response.json({ ok: true, mode: "archive" });
+  }
+
+  // Hard delete — 先檢查 FK
+  const newsCount = await prisma.news.count({ where: { sourceId: id } });
+  if (newsCount > 0) {
+    return Response.json(
+      {
+        ok: false,
+        error: `Cannot hard-delete: ${newsCount} news article(s) reference this source. Reassign or delete them first.`,
+        newsCount,
+        sourceSlug: existing.slug,
+      },
+      { status: 409 },
+    );
+  }
+
+  await prisma.source.delete({ where: { id } });
+  return Response.json({ ok: true, mode: "hard" });
 }

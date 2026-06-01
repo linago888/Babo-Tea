@@ -677,8 +677,11 @@
         "saveButton": "保存",
         "saving": "保存中…",
         "saved": "保存成功",
-        "deleteButton": "归档（不删除）",
-        "deleteConfirm": "确定要归档该来源吗？已引用此来源的新闻不会受影响。",
+        "deleteButton": "归档",
+        "deleteConfirm": "确定要归档该来源吗？数据保留，仅在公开站隐藏；已引用此来源的新闻不会受影响。",
+        "hardDeleteButton": "永久删除",
+        "hardDeleteHint": "完全从数据库移除；若有新闻引用此来源会被拦下并提示。",
+        "hardDeleteConfirm": "确定要永久删除该来源吗？无法复原。若有新闻引用会被拦下并显示数量。",
         "validationErrors": "以下字段缺失或格式错误：",
         "back": "← 回来源列表"
       }

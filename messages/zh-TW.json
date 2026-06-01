@@ -677,8 +677,11 @@
         "saveButton": "儲存",
         "saving": "儲存中…",
         "saved": "儲存成功",
-        "deleteButton": "封存（不刪除）",
-        "deleteConfirm": "確定要封存此來源嗎？已引用此來源的新聞不會受影響。",
+        "deleteButton": "封存",
+        "deleteConfirm": "確定要封存此來源嗎？資料保留，僅在公開站隱藏；已引用此來源的新聞不會受影響。",
+        "hardDeleteButton": "永久刪除",
+        "hardDeleteHint": "完全從資料庫移除；若有新聞引用此來源會擋下並提示。",
+        "hardDeleteConfirm": "確定要永久刪除此來源嗎？無法復原。若有新聞引用會被擋下並顯示數量。",
         "validationErrors": "以下欄位缺失或格式錯誤：",
         "back": "← 回來源列表"
       }

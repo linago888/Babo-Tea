@@ -677,8 +677,11 @@
         "saveButton": "Save",
         "saving": "Saving…",
         "saved": "Saved",
-        "deleteButton": "Archive (soft delete)",
-        "deleteConfirm": "Archive this source? News articles referencing it won't be affected.",
+        "deleteButton": "Archive",
+        "deleteConfirm": "Archive this source? Data is kept, just hidden from the public site; news referencing it won't be affected.",
+        "hardDeleteButton": "Delete permanently",
+        "hardDeleteHint": "Removes the row from the database entirely. Blocked if any news references this source.",
+        "hardDeleteConfirm": "Permanently delete this source? Cannot be undone. If any news references it, the deletion is blocked and you'll see the count.",
         "validationErrors": "Some required fields are missing or invalid:",
         "back": "← Back to sources"
       }

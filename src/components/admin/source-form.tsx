@@ -186,6 +186,37 @@ export default function SourceForm({
     }
   }
 
+  async function handleHardDelete() {
+    if (!sourceId) return;
+    if (!confirm(tEdit("hardDeleteConfirm"))) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/sources/${sourceId}?hard=true`, { method: "DELETE" });
+      const data = (await res.json()) as {
+        ok: boolean;
+        error?: string;
+        newsCount?: number;
+      };
+      if (!data.ok) {
+        // FK 衝突：列出有多少新聞引用 + 給導去 news 篩選的連結
+        if (data.newsCount && data.newsCount > 0) {
+          setTopError(
+            `${data.error}  → /admin/news?sourceId=${sourceId}`,
+          );
+        } else {
+          setTopError(data.error ?? "Hard delete failed");
+        }
+        setSubmitting(false);
+        return;
+      }
+      router.push("/admin/sources");
+      router.refresh();
+    } catch (err) {
+      setTopError(err instanceof Error ? err.message : "Network error");
+      setSubmitting(false);
+    }
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <header className="flex items-center justify-between gap-4">
@@ -210,14 +241,25 @@ export default function SourceForm({
             </span>
           ) : null}
           {mode === "edit" ? (
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={submitting}
-              className="rounded-md border border-rose-300 px-3 py-1.5 text-sm font-medium text-rose-700 transition hover:bg-rose-50 disabled:opacity-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950"
-            >
-              {tEdit("deleteButton")}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={submitting}
+                className="rounded-md border border-amber-300 px-3 py-1.5 text-sm font-medium text-amber-700 transition hover:bg-amber-50 disabled:opacity-50 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-950"
+              >
+                {tEdit("deleteButton")}
+              </button>
+              <button
+                type="button"
+                onClick={handleHardDelete}
+                disabled={submitting}
+                title={tEdit("hardDeleteHint")}
+                className="rounded-md border border-rose-400 bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-800 transition hover:bg-rose-100 disabled:opacity-50 dark:border-rose-700 dark:bg-rose-950 dark:text-rose-200 dark:hover:bg-rose-900"
+              >
+                {tEdit("hardDeleteButton")}
+              </button>
+            </>
           ) : null}
           <button
             type="submit"
