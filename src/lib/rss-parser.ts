@@ -121,6 +121,107 @@ export function parseRssXml(xml: string): RssItem[] {
   return items;
 }
 
+/**
+ * 自動探查網站的 RSS / Atom feed URL。
+ *
+ * 步驟：
+ *   1. fetch 該頁面 HTML
+ *   2. 從 <head> 抓 <link rel="alternate" type="application/rss+xml" href="..."> 或
+ *      type="application/atom+xml"。優先 rss > atom。
+ *   3. 若 HTML 沒宣告，試常見路徑：/feed、/rss、/feed.xml、/atom.xml、/index.xml、/?feed=rss2
+ *   4. 對每個候選做輕量驗證（HEAD 或 GET 看 content-type）
+ *
+ * 回傳第一個有效 feed URL，或 null。
+ */
+export async function discoverRssUrl(siteUrl: string): Promise<{
+  feedUrl: string;
+  via: "html-link" | "guess";
+} | null> {
+  const url = new URL(siteUrl);
+  if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+
+  // Step 1: fetch homepage HTML
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  let html = "";
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { "User-Agent": USER_AGENT, Accept: "text/html,*/*;q=0.5" },
+      redirect: "follow",
+      signal: controller.signal,
+    });
+    if (res.ok) {
+      html = (await res.text()).slice(0, 200_000); // 只看前 200 KB
+    }
+  } catch {
+    /* swallow — continue to guesses */
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  // Step 2: parse <link rel="alternate" type="application/rss+xml" href="...">
+  if (html) {
+    // 允許屬性順序顛倒（rel/href/type 任何順序）
+    const linkRegex = /<link\b([^>]*?)\/?>/gi;
+    type Candidate = { href: string; type: string; title: string };
+    const candidates: Candidate[] = [];
+    for (const m of html.matchAll(linkRegex)) {
+      const attrs = m[1];
+      const rel = attrs.match(/\brel=["']([^"']+)["']/i)?.[1] ?? "";
+      if (!rel.includes("alternate")) continue;
+      const type = attrs.match(/\btype=["']([^"']+)["']/i)?.[1] ?? "";
+      if (!/rss|atom|xml/i.test(type)) continue;
+      const href = attrs.match(/\bhref=["']([^"']+)["']/i)?.[1];
+      if (!href) continue;
+      const title = attrs.match(/\btitle=["']([^"']+)["']/i)?.[1] ?? "";
+      candidates.push({ href, type, title });
+    }
+    // 優先 rss > atom；同層內保留宣告順序
+    candidates.sort((a, b) => {
+      const score = (t: string) => (/rss/i.test(t) ? 0 : /atom/i.test(t) ? 1 : 2);
+      return score(a.type) - score(b.type);
+    });
+    if (candidates.length > 0) {
+      try {
+        const feedUrl = new URL(candidates[0].href, url).toString();
+        return { feedUrl, via: "html-link" };
+      } catch { /* invalid href, fall through */ }
+    }
+  }
+
+  // Step 3: try common patterns
+  const guesses = ["/feed", "/rss", "/feed.xml", "/rss.xml", "/atom.xml", "/index.xml", "/?feed=rss2"];
+  for (const path of guesses) {
+    let candidate: string;
+    try {
+      candidate = new URL(path, url).toString();
+    } catch {
+      continue;
+    }
+    try {
+      const probe = await fetch(candidate, {
+        method: "GET",
+        headers: { "User-Agent": USER_AGENT, Accept: "application/rss+xml,application/atom+xml,application/xml,*/*;q=0.5" },
+        redirect: "follow",
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      });
+      if (!probe.ok) continue;
+      const ct = probe.headers.get("content-type") ?? "";
+      // 接受 xml / rss / atom；HTML 就不算
+      if (!/xml|rss|atom/i.test(ct)) {
+        // 偶有伺服器回 text/plain，就看實際內容前 200 字
+        const snippet = (await probe.text()).slice(0, 500).toLowerCase();
+        if (!/<rss\b|<feed\b|<channel\b/.test(snippet)) continue;
+      }
+      return { feedUrl: candidate, via: "guess" };
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
 export async function fetchRssFeed(feedUrl: string): Promise<RssItem[]> {
   const url = new URL(feedUrl);
   if (url.protocol !== "http:" && url.protocol !== "https:") {

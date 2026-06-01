@@ -410,13 +410,21 @@ export default function SourceForm({
           {/* RSS feed — sm:col-span-2 跨整列 */}
           <div className="sm:col-span-2">
             <Field label={tFields("rssFeedUrl")} hint={tFields("rssFeedUrlHint")}>
-              <input
-                type="url"
-                value={values.rssFeedUrl}
-                onChange={(e) => update("rssFeedUrl", e.target.value)}
-                placeholder="https://example.com/feed.xml"
-                className={inputClass}
-              />
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={values.rssFeedUrl}
+                  onChange={(e) => update("rssFeedUrl", e.target.value)}
+                  placeholder="https://example.com/feed.xml"
+                  className={`${inputClass} flex-1`}
+                />
+                <RssDiscoverButton
+                  domain={values.domain}
+                  rssUrl={values.rssFeedUrl}
+                  onFound={(url) => update("rssFeedUrl", url)}
+                  tFields={tFields}
+                />
+              </div>
             </Field>
             {mode === "edit" && currentRssUrl.length > 0 && !showRssPanel ? (
               <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
@@ -462,6 +470,82 @@ export default function SourceForm({
         </div>
       ) : null}
     </form>
+  );
+}
+
+function RssDiscoverButton({
+  domain,
+  rssUrl,
+  onFound,
+  tFields,
+}: {
+  domain: string;
+  rssUrl: string;
+  onFound: (url: string) => void;
+  tFields: (key: string) => string;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [via, setVia] = useState<string | null>(null);
+
+  async function discover() {
+    setBusy(true);
+    setError(null);
+    setVia(null);
+    // 優先順序：使用者欄位內已輸入的 URL > domain 推導出的 https
+    const seed =
+      rssUrl.trim() ||
+      (domain.trim() ? `https://${domain.trim().replace(/^https?:\/\//, "")}` : "");
+    if (!seed) {
+      setError("Need either a URL or the domain field set");
+      setBusy(false);
+      return;
+    }
+    try {
+      const res = await fetch("/api/admin/sources/discover-rss", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: seed }),
+      });
+      const data = (await res.json()) as
+        | { ok: true; feedUrl: string; via: string }
+        | { ok: false; error?: string };
+      if (!data.ok) {
+        setError("error" in data && data.error ? data.error : "Discovery failed");
+        setBusy(false);
+        return;
+      }
+      onFound(data.feedUrl);
+      setVia(data.via);
+      setBusy(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-stretch">
+      <button
+        type="button"
+        onClick={discover}
+        disabled={busy}
+        title={tFields("rssDiscoverHint")}
+        className="shrink-0 rounded-md border border-violet-300 bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-800 transition hover:bg-violet-100 disabled:opacity-50 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-200 dark:hover:bg-violet-900"
+      >
+        {busy ? tFields("rssDiscoverRunning") : `🔍 ${tFields("rssDiscover")}`}
+      </button>
+      {via ? (
+        <span className="mt-1 text-[10px] text-emerald-700 dark:text-emerald-400">
+          ✓ {via === "html-link" ? tFields("rssDiscoverFromLink") : tFields("rssDiscoverFromGuess")}
+        </span>
+      ) : null}
+      {error ? (
+        <span className="mt-1 max-w-[200px] text-[10px] text-rose-700 dark:text-rose-400">
+          {error}
+        </span>
+      ) : null}
+    </div>
   );
 }
 
