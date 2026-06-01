@@ -663,6 +663,8 @@
           "notes": "編輯備註",
           "rssFeedUrl": "RSS Feed URL",
           "rssFeedUrlHint": "RSS / Atom 訂閱網址。設定後 ingest job 會自動拉新文章建為 DRAFT，編輯審稿即可發布。",
+          "rssUnsavedHint": "你貼了 URL — 請按上方「儲存」後再回來拉取（拉取按鈕需要 DB 已存的 URL）。",
+          "rssDirtyHint": "你改了 URL — 請按上方「儲存」後再拉取，否則拉取會用舊的 URL。",
           "rssIngestTitle": "RSS 自動匯入",
           "rssLastCrawled": "上次抓取",
           "rssNeverCrawled": "尚未抓取過",

@@ -663,6 +663,8 @@
           "notes": "Editor notes",
           "rssFeedUrl": "RSS Feed URL",
           "rssFeedUrlHint": "RSS / Atom feed URL. Once set, the ingest job auto-pulls new articles as DRAFT for editor review.",
+          "rssUnsavedHint": "You pasted a URL — press Save above first, then come back to ingest (ingest reads from DB, not from the form).",
+          "rssDirtyHint": "URL changed — press Save before ingesting, otherwise ingest will use the previously saved URL.",
           "rssIngestTitle": "RSS auto-ingest",
           "rssLastCrawled": "Last crawled",
           "rssNeverCrawled": "Never crawled",

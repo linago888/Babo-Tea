@@ -98,6 +98,13 @@ export default function SourceForm({
 
   const locales = routing.locales as readonly Locale[];
 
+  // RSS 面板用 DB 已儲存的值來判斷顯不顯示；
+  // 若使用者在表單中改了 URL 但還沒按儲存，顯示「請先儲存」提示
+  const savedRssUrl = (initial.rssFeedUrl ?? "").trim();
+  const currentRssUrl = values.rssFeedUrl.trim();
+  const rssIsDirty = savedRssUrl !== currentRssUrl;
+  const showRssPanel = mode === "edit" && savedRssUrl.length > 0;
+
   function update<K extends keyof SourceFormValues>(key: K, value: SourceFormValues[K]) {
     setValues((v) => ({ ...v, [key]: value }));
   }
@@ -369,7 +376,17 @@ export default function SourceForm({
                 className={inputClass}
               />
             </Field>
-            {mode === "edit" && values.rssFeedUrl.trim() ? (
+            {mode === "edit" && currentRssUrl.length > 0 && !showRssPanel ? (
+              <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+                ⚠ {tFields("rssUnsavedHint")}
+              </p>
+            ) : null}
+            {mode === "edit" && rssIsDirty && showRssPanel ? (
+              <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+                ⚠ {tFields("rssDirtyHint")}
+              </p>
+            ) : null}
+            {showRssPanel ? (
               <RssIngestPanel
                 sourceId={sourceId!}
                 lastCrawledAt={values.lastCrawledAt}

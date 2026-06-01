@@ -663,6 +663,8 @@
           "notes": "編集メモ",
           "rssFeedUrl": "RSS フィード URL",
           "rssFeedUrlHint": "RSS / Atom フィード URL。設定すると ingest ジョブが新着記事を DRAFT として自動取得、編集者がレビューして公開。",
+          "rssUnsavedHint": "URL を入力しました — 上の「保存」を押してから取得してください（取得は DB に保存された URL を使います）。",
+          "rssDirtyHint": "URL が変更されました — 取得前に上の「保存」を押してください。そうしないと以前保存された URL が使われます。",
           "rssIngestTitle": "RSS 自動取得",
           "rssLastCrawled": "前回取得",
           "rssNeverCrawled": "未取得",
