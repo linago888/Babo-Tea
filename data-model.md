@@ -1,6 +1,13 @@
-# Global Boba Graph 資料模型規格 v1
+# Global Boba Graph 資料模型規格 v1.3
+
+> **更新紀錄**
+> - **v1.3 (2026-05-30)**：對齊 Phase 5 實作 — 新增 §14 search_log、§15 圖片儲存（Vercel Blob），更新 §7 metrics_daily metric enum 完整列表、§1.4 news 補 `ai_summary_reviewed_at` 欄位、§5 sources status 預設改 `PUBLISHED`。
+> - **v1.2 (2026-05-28)**：完成 Phase 5A 關聯編輯，Brand/News 編輯後台支援 brand_drinks/brand_cities/brand_company/news_brands/news_cities/news_drinks 全套關聯維護。
+> - **v1**：初版 schema 規格。
 
 本檔補齊 `prototype-spec.md` 中未明確定義的實體、屬性、關聯與衍生指標計算。所有 schema 假設使用 PostgreSQL（或同等關聯式資料庫）；欄位命名採 `snake_case`，主鍵採 UUID v7（時序可排序）。
+
+實作上 Postgres / Supabase 採 `gen_random_uuid()`（UUID v4），效能與排序需求都能滿足；遷移到 UUID v7 是後續優化方向（不需動 schema）。
 
 ---
 
@@ -100,6 +107,7 @@
 | `body_i18n` | jsonb | ✓ | markdown |
 | `ai_summary_i18n` | jsonb | | AI 草稿，內部標註 `reviewed_by` 後才可公開 |
 | `ai_summary_reviewed_by` | uuid → users | | NULL 表示未審 → 前台不顯示 |
+| `ai_summary_reviewed_at` | timestamptz | | 審核時間；與 `reviewed_by` 一起判斷可發布 |
 | `category` | enum | ✓ | `expansion | launch | franchise-investment | city-market | trend | supply-chain | culture` |
 | `source_id` | uuid → sources | ✓ | 主要來源 |
 | `source_url` | text | ✓ | 原文 URL |
@@ -208,7 +216,7 @@ taxonomies(id, kind, code, label_i18n, parent_id, sort_order, status)
 | `credibility_score` | smallint | | 0-100，編輯部評定 |
 | `paywall` | boolean | | |
 | `notes` | text | | |
-| `status` | enum | ✓ | |
+| `status` | enum | ✓ | 預設 `published`（sources 屬於 reference data，不走草稿審稿） |
 
 **索引**：`UNIQUE(domain)` — 同一域名只能一個 source，方便去重。
 
@@ -274,12 +282,33 @@ taxonomies(id, kind, code, label_i18n, parent_id, sort_order, status)
 | 欄位 | 型別 | 必填 | 說明 |
 |---|---|---|---|
 | `entity_kind` | enum | ✓ | `brand | city | drink` |
-| `entity_id` | uuid | ✓ | |
-| `metric` | enum | ✓ | `trending_score | market_maturity | news_count_7d | new_store_count_30d | social_mention_7d` |
+| `entity_id` | uuid | ✓ | polymorphic — 故意不設 FK |
+| `metric` | enum | ✓ | 見下方完整列表 |
 | `date` | date | ✓ | |
 | `value` | numeric(10,4) | ✓ | |
 | `inputs` | jsonb | | 計算當下的輸入快照（可重算） |
-| PK | `(entity_kind, entity_id, metric, date)` | | |
+| `created_at` | timestamptz | ✓ | |
+| PK | `(entity_kind, entity_id, metric, date)` | | 每天每實體每指標一筆 |
+
+**metric enum 完整列表**（v1.3 對齊）：
+
+| metric code | 適用 entity_kind | 說明 |
+|---|---|---|
+| `trending_score` | brand / city / drink | 0-100，綜合熱度分數（見 §7.2） |
+| `market_maturity` | city | 分桶 emerging / growing / mature / saturated |
+| `popularity_score` | drink / city | 0-100，飲品 × 城市的流行度 |
+| `news_count_30d` | brand / city / drink | 近 30 天新聞提及數 |
+| `new_store_count_30d` | brand / city | 近 30 天新開店數 |
+| `new_store_count_90d` | brand / city | 近 90 天新開店數 |
+| `social_mention_30d` | brand | 近 30 天社群提及數（v2 接入 social listening API） |
+| `search_volume_30d` | brand / drink | 近 30 天 SearchLog 命中數（見 §14） |
+| `active_store_count` | brand / city | 當下營業中店數（`stores.closed_at IS NULL`） |
+| `distinct_brand_count` | city | 城市內不同品牌數 |
+
+**索引**：
+- `(metric, date, value DESC)` — 排行榜（某 metric 在某天的前 N 名）
+- `(entity_kind, entity_id, metric, date DESC)` — 時間軸（某實體某 metric 的歷史走勢）
+- `(date)` — 全表 housekeeping
 
 ### 7.2 計算公式（v1，每日 cron）
 
@@ -448,13 +477,131 @@ erDiagram
 
 ---
 
-## 13. 落地順序（建議）
+## 14. search_log（公開站搜尋紀錄，Phase 5D 新增）
 
-1. **Day 1-2**：建 `brands`、`cities`、`drinks`、`news`、`sources`、`taxonomies` 六張主表 + 種子 taxonomy。
-2. **Day 3**：建關聯表 `brand_drinks`、`brand_cities`、`news_*`、`drink_cities`。
-3. **Day 4**：建 `stores`、`companies`、`brand_company`。
-4. **Day 5**：建 `metrics_daily` 與計算 job 骨架（先不上線，欄位先有）。
-5. **Day 6**：CMS 連通；品質欄位（completeness_score view）。
-6. **Day 7**：種 5 個城市 × 10 品牌 × 15 飲品 × 10 新聞，end-to-end 驗證。
+> 設計目的：記錄使用者實際在 `/search` 搜了什麼，給編輯團隊看「熱門關鍵字」與「零結果關鍵字」。零結果 query 是內容空缺的金牌訊號。
 
-之後再水平擴量到 spec 原訂的 50 / 20 / 30 / 50。
+| 欄位 | 型別 | 必填 | 說明 |
+|---|---|---|---|
+| `id` | uuid | ✓ | |
+| `query` | text | ✓ | 已 trim + lowercase 後的查詢字串 |
+| `locale` | text | ✓ | BCP-47，例 `en` / `zh-TW` |
+| `result_count` | integer | ✓ | 命中總數 |
+| `country_code` | char(2) | | 取自 Vercel `x-vercel-ip-country` header |
+| `created_at` | timestamptz | ✓ | |
+
+**索引**：
+- `(created_at DESC)` — 時間範圍查詢
+- `(query)` — 按關鍵字聚合
+- `(result_count)` — 快速取零結果集
+- `(locale)` — 語系分佈
+
+**寫入策略**：
+- `/[locale]/search` 渲染完搜尋結果後 `void logSearch(...)` — fire-and-forget，**不阻塞**頁面回應。
+- < 2 字元 query 不記，避免單字母 noise。
+- **不記 IP**（隱私）；只記 country code（聚合後風險低）。
+- 失敗時 `console.warn`，不丟回使用者。
+
+**不設 FK**：純 log 表，user / brand 等實體被刪不該連帶刪歷史。30 天後可由 housekeeping job 清舊資料。
+
+**Admin 儀表板**（`/admin/search-log`，見 prototype-spec §13.3）：
+- 4 個磚卡：7 天 / 30 天搜尋總數、7 天零結果、活躍語系數
+- 30 天 daily volume sparkline
+- 熱門關鍵字 Top 20（含平均命中數）
+- 零結果關鍵字 Top 20（橘色 bar，編輯團隊看完就知道下一篇要寫什麼）
+- 語系 + 國家分佈長條
+
+---
+
+## 15. 圖片儲存（Phase 5B 新增）
+
+> 設計目的：取代「手填 URL」，編輯後台直接拖檔上傳。
+
+**儲存方案**：Vercel Blob（同平台 storage，免維運，免費額度 1 GB 儲存 / 1 GB 流量/月）。
+
+**不入 DB**：圖片本身存 Blob，DB 只存 public URL（`brands.logo_url`、`brands.hero_image_url`、`news.hero_image_url` 等既有欄位）。URL 也支援外部來源（編輯可直接貼第三方圖庫連結）。
+
+**上傳 endpoint**（`POST /api/admin/upload`，multipart/form-data）：
+
+| 限制 | 值 |
+|---|---|
+| 認證 | admin Basic Auth（同其他 `/api/admin/*`） |
+| MIME whitelist | `image/jpeg | png | webp | gif | svg+xml | avif` |
+| 檔案大小 | ≤ 5 MB |
+| 命名 | 隨機 suffix + sanitised pathname，避免覆蓋 |
+| 路徑前綴 | 客戶端指定，例 `brands/logos`、`news/hero` |
+
+**降級行為**：未設 `BLOB_READ_WRITE_TOKEN` env var 時回 503 + 友善訊息，URL 手填仍可用。
+
+---
+
+## 16. AI 草稿生成（Phase 5B 新增）
+
+> 設計目的：4 個 locale 全手寫太耗時，AI 一鍵產 description / summary / body / SEO 草稿，編輯收尾微調。
+
+**不入 DB**：純 service。LLM 回的草稿直接回填到表單欄位，使用者按「儲存」才寫入 DB。
+
+**Endpoint**（`POST /api/admin/ai/draft`）：
+
+```json
+{
+  "instruction": "Write a 60-100 word brand description...",
+  "context": "Brand: Gong Cha\nCountry: TW\nFounded: 2006\n...",
+  "fields": ["text"],               // 或 ["title", "description"]（SEO）
+  "locales": ["en", "zh-TW", "zh-CN", "ja"],
+  "maxChars": { "title": 60, "description": 160 }
+}
+```
+
+回：
+```json
+{
+  "ok": true,
+  "drafts": {
+    "text": {
+      "en": "...",
+      "zh-TW": "...",
+      "zh-CN": "...",
+      "ja": "..."
+    }
+  }
+}
+```
+
+**模型**：OpenAI `gpt-4o-mini`（成本低、夠用）。透過 Vercel AI SDK `generateObject` + Zod schema，確保輸出形狀正確。
+
+**Prompt 設計重點**：
+- System prompt 鎖定各 locale 語調：en 中性國際英文 / zh-TW 台灣用詞 / zh-CN 大陸用詞 / ja 自然敬語。
+- 明確指示「不要編造數字 / 引言 / 店數」— 只用 context 提供的事實。
+- `maxChars` 對應每欄字數上限。
+
+**降級行為**：未設 `OPENAI_API_KEY` env var 時回 503 + 友善訊息，按鈕仍出現但 toast 提示。
+
+**與 news.ai_summary_i18n 的差異**：
+- `ai_summary_i18n` 是**入 DB 的 AI 摘要**，需審核才公開（§1.4 + §8.1 spec）
+- 本章描述的 `POST /api/admin/ai/draft` 是**生成過程**，產出可填到任何 i18n 欄位
+- 兩者結合：news 編輯頁的「AI 摘要」tab 按生成按鈕 → 草稿填到 `aiSummaryI18n` state → 編輯確認後 save → 寫到 `news.ai_summary_i18n`，**還需設 `ai_summary_reviewed_at` 才公開**。
+
+---
+
+## 17. 落地順序（建議）
+
+### 17.1 MVP（已完成）
+
+1. **Day 1-2** ✅：建 `brands`、`cities`、`drinks`、`news`、`sources`、`taxonomies` 六張主表 + 種子 taxonomy。
+2. **Day 3** ✅：建關聯表 `brand_drinks`、`brand_cities`、`news_*`、`drink_cities`。
+3. **Day 4** ✅：建 `stores`、`companies`、`brand_company`。
+4. **Day 5** ✅：建 `metrics_daily` 與計算 job（`pnpm metrics:run`）。
+5. **Day 6** ✅：CMS 連通；品質欄位（每實體 completeness_score + lastHumanEditAt + contentOwnerId + reviewDueAt）。
+6. **Day 7** ✅：種 5 個城市 × 10 品牌 × 15 飲品 × 10 新聞，end-to-end 驗證。
+
+### 17.2 Phase 5（後續擴充，已完成）
+
+- **5A** ✅：Companies / Stores CRUD + Brand/News 編輯頁加 brand_drinks / brand_cities / brand_company / news_brands / news_cities / news_drinks 關聯編輯 tab。
+- **5B** ✅：AI 草稿生成（§16）+ 圖片上傳（§15）。
+- **5D** ✅：Search log 表（§14）+ `/admin/search-log` 儀表板 + `/admin/metrics` 視覺化儀表板（用既有 metrics_daily）。
+
+### 17.3 待規劃
+
+- **5C**：NextAuth 多帳號 + RBAC + audit log（v1 仍是 HTTP Basic 單帳號）。
+- Drinks/Sources/Taxonomies 主表雖已 CRUD 完，但前台還沒對應 `taxonomies.code` 用 `label_i18n` 顯示的 join 機制（目前直接顯示 code）— 待 Phase 5E 補。
