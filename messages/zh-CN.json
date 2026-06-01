@@ -272,7 +272,8 @@
       "relatedDrinks": "相关饮品",
       "source": "来源"
     },
-    "viewSource": "阅读原文 ↗"
+    "viewSource": "阅读原文 ↗",
+    "originalSource": "原始来源"
   },
   "relevance": {
     "primary": "主角",

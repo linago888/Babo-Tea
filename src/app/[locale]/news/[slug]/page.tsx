@@ -208,18 +208,25 @@ export default async function NewsDetailPage({ params }: PageParams) {
         </div>
       </article>
 
-      {/* Source link */}
+      {/* Source link — 編輯部原創不顯示（sourceUrl 為空） */}
       {news.sourceUrl ? (
-        <p className="mt-6 text-sm">
+        <aside className="mt-8 rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm dark:border-amber-900 dark:bg-amber-950/30">
+          <p className="text-xs uppercase tracking-wider text-amber-700 dark:text-amber-300">
+            {t("newsDetail.originalSource")}
+          </p>
           <a
             href={news.sourceUrl}
             target="_blank"
             rel="noreferrer noopener nofollow"
-            className="text-amber-700 hover:underline dark:text-amber-300"
+            className="mt-1 inline-flex items-center gap-1.5 text-amber-900 hover:underline dark:text-amber-200"
           >
-            {t("newsDetail.viewSource")}
+            <span className="font-medium">{sourceName}</span>
+            <span aria-hidden className="text-xs">↗</span>
           </a>
-        </p>
+          <p className="mt-0.5 break-all text-xs text-amber-700/80 dark:text-amber-400/80">
+            {news.sourceUrl}
+          </p>
+        </aside>
       ) : null}
 
       {/* ── Related entities ── */}

@@ -9,6 +9,7 @@ import { routing, type Locale } from "@/i18n/routing";
 
 import AiDraftButton from "./ai-draft-button";
 import ImageUploadField from "./image-upload-field";
+import NewsCrawlPanel, { type ApplyArgs as CrawlApplyArgs } from "./news-crawl-panel";
 
 type NewsCategory =
   | "EXPANSION"
@@ -285,6 +286,27 @@ export default function NewsForm({
     (t) => mode === "edit" || (t !== "relatedBrands" && t !== "relatedCities" && t !== "relatedDrinks"),
   );
 
+  function handleCrawlApply(args: CrawlApplyArgs) {
+    setValues((v) => ({
+      ...v,
+      sourceUrl: args.sourceUrl,
+      publishedAt: args.publishedAt ?? v.publishedAt,
+      heroImageUrl: args.heroImageUrl ?? v.heroImageUrl,
+      sourceId: args.sourceId ?? v.sourceId,
+      titleI18n: { ...v.titleI18n, ...args.titleI18n },
+      summaryI18n: { ...v.summaryI18n, ...args.summaryI18n },
+      bodyI18n: { ...v.bodyI18n, ...args.bodyI18n },
+    }));
+    if (args.sourceSuggest && !args.sourceId) {
+      setTopError(
+        `已套用內容，但找不到 domain "${args.sourceSuggest.domain}" 對應的來源。請先到 /admin/sources/new 建立來源（建議 slug: ${args.sourceSuggest.slug}、name: ${args.sourceSuggest.name}），再回來這頁選擇。`,
+      );
+    } else {
+      setTopError(null);
+    }
+    setTab("i18n"); // 跳到 i18n tab 讓編輯馬上看到翻譯結果
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <header className="flex items-center justify-between gap-4">
@@ -299,6 +321,8 @@ export default function NewsForm({
           <button type="submit" disabled={submitting} className="rounded-md bg-rose-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-rose-800 disabled:opacity-50 dark:bg-rose-700 dark:hover:bg-rose-600">{submitting ? tEdit("saving") : tEdit("saveButton")}</button>
         </div>
       </header>
+
+      {mode === "create" ? <NewsCrawlPanel onApply={handleCrawlApply} /> : null}
 
       {topError ? <div className="rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-200">{topError}</div> : null}
       {errors.length > 0 ? (

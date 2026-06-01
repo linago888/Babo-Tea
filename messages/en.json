@@ -272,7 +272,8 @@
       "relatedDrinks": "Related drinks",
       "source": "Source"
     },
-    "viewSource": "Read original ↗"
+    "viewSource": "Read original ↗",
+    "originalSource": "Original source"
   },
   "relevance": {
     "primary": "Primary",

@@ -272,7 +272,8 @@
       "relatedDrinks": "関連ドリンク",
       "source": "出典"
     },
-    "viewSource": "原文を読む ↗"
+    "viewSource": "原文を読む ↗",
+    "originalSource": "原典"
   },
   "relevance": {
     "primary": "主役",
