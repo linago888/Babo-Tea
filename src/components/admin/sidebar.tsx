@@ -30,6 +30,7 @@ function useNavGroups(): NavGroup[] {
         { label: t("cities"), href: "/admin/cities" },
         { label: t("drinks"), href: "/admin/drinks" },
         { label: t("news"), href: "/admin/news" },
+        { label: t("newsInbox"), href: "/admin/news-inbox" },
         { label: t("stores"), href: "/admin/stores" },
         { label: t("companies"), href: "/admin/companies" },
         { label: t("sources"), href: "/admin/sources" },

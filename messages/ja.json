@@ -309,6 +309,7 @@
       "cities": "都市",
       "drinks": "ドリンク",
       "news": "ニュース",
+      "newsInbox": "📥 ニュース受信箱",
       "sources": "ニュース出典",
       "taxonomies": "統制語彙",
       "companies": "親会社",
@@ -550,6 +551,38 @@
         "deleteConfirm": "このドリンクをアーカイブしますか？データは保持され、公開サイトから非表示になります。",
         "validationErrors": "以下のフィールドに不備があります：",
         "back": "← ドリンク一覧へ"
+      }
+    },
+    "newsInbox": {
+      "title": "ニュース受信箱",
+      "subtitle": "各国 RSS ソースからクロールしたドラフト記事を新しい順に表示。編集・公開するものを選び、残りは削除。",
+      "tiles": {
+        "pending": "未処理",
+        "sources": "稼働ソース",
+        "shown": "表示中",
+        "archived": "アーカイブ済"
+      },
+      "ingestAll": "全ソースから取得",
+      "ingestAllRunning": "取得中…",
+      "sources": "ソース",
+      "created": "新規",
+      "skipped": "既存スキップ",
+      "errors": "エラー",
+      "filterBySource": "ソースで絞り込み",
+      "allSources": "すべて",
+      "apply": "適用",
+      "clearFilter": "絞り込み解除",
+      "crawled": "取得",
+      "published": "原公開",
+      "noImage": "画像なし",
+      "emptyTitle": "受信箱は空です 🎉",
+      "emptyHint": "上の「全ソースから取得」をクリック、または /admin/sources で各ソースに RSS Feed URL を設定してください。",
+      "limitNote": "最大 100 件を表示中。処理を進めてから残りをご確認ください。",
+      "actions": {
+        "edit": "編集",
+        "publish": "公開",
+        "delete": "削除",
+        "deleteConfirm": "このドラフトを完全に削除しますか？元に戻せません。"
       }
     },
     "news": {

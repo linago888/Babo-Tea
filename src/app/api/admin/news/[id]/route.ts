@@ -199,7 +199,16 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   return Response.json({ ok: true, news: { id, slug: data.slug } });
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+/**
+ * DELETE /api/admin/news/[id]
+ *
+ * 預設：soft delete（status = ARCHIVED）
+ * `?hard=true`：硬刪除。會 cascade 清掉 news_brands / news_cities / news_drinks
+ *               關聯（Prisma schema 已設 onDelete: Cascade）。
+ *
+ * Inbox 列表的 🗑 按鈕用 hard 模式 — 那些都是還沒人工審過的草稿，全清掉乾淨。
+ */
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await isAdminAuthorized())) {
     return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
@@ -210,10 +219,17 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     return Response.json({ ok: false, error: "News not found" }, { status: 404 });
   }
 
-  await prisma.news.update({ where: { id }, data: { status: "ARCHIVED" } });
+  const url = new URL(req.url);
+  const hard = url.searchParams.get("hard") === "true";
+
+  if (hard) {
+    await prisma.news.delete({ where: { id } });
+  } else {
+    await prisma.news.update({ where: { id }, data: { status: "ARCHIVED" } });
+  }
 
   revalidatePath("/[locale]/news", "layout");
   revalidatePath(`/[locale]/news/${existing.slug}`, "layout");
 
-  return Response.json({ ok: true });
+  return Response.json({ ok: true, mode: hard ? "hard" : "archive" });
 }

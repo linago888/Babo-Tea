@@ -309,6 +309,7 @@
       "cities": "城市",
       "drinks": "饮品",
       "news": "新闻",
+      "newsInbox": "📥 新闻收件箱",
       "sources": "新闻来源",
       "taxonomies": "受控词汇",
       "companies": "母公司",
@@ -550,6 +551,38 @@
         "deleteConfirm": "确定要归档该饮品吗？数据不会删除，只是从公开站点下架。",
         "validationErrors": "以下字段缺失或格式错误：",
         "back": "← 回饮品列表"
+      }
+    },
+    "newsInbox": {
+      "title": "新闻收件箱",
+      "subtitle": "从各国 RSS 来源爬到的草稿新闻，按最新到旧排序。挑选要编辑或发布的，其他删掉。",
+      "tiles": {
+        "pending": "待处理",
+        "sources": "活跃来源",
+        "shown": "本页显示",
+        "archived": "已归档"
+      },
+      "ingestAll": "从所有来源拉新文章",
+      "ingestAllRunning": "抓取中…",
+      "sources": "个来源",
+      "created": "新增",
+      "skipped": "已存在跳过",
+      "errors": "个错误",
+      "filterBySource": "按来源筛选",
+      "allSources": "全部",
+      "apply": "应用",
+      "clearFilter": "清除筛选",
+      "crawled": "抓到",
+      "published": "原发布",
+      "noImage": "无图",
+      "emptyTitle": "收件箱空空的 🎉",
+      "emptyHint": "按上方「拉取新文章」或先去 /admin/sources 为每个来源设定 RSS Feed URL。",
+      "limitNote": "本页最多显示 100 笔。请先处理一些再回来看后面的。",
+      "actions": {
+        "edit": "编辑",
+        "publish": "发布",
+        "delete": "删除",
+        "deleteConfirm": "确定永久删除这则草稿？无法复原。"
       }
     },
     "news": {

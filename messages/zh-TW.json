@@ -309,6 +309,7 @@
       "cities": "城市",
       "drinks": "飲品",
       "news": "新聞",
+      "newsInbox": "📥 新聞收件匣",
       "sources": "新聞來源",
       "taxonomies": "受控詞彙",
       "companies": "母公司",
@@ -550,6 +551,38 @@
         "deleteConfirm": "確定要封存此飲品嗎？資料不會刪除，僅從公開網站下架。",
         "validationErrors": "以下欄位缺失或格式錯誤：",
         "back": "← 回飲品列表"
+      }
+    },
+    "newsInbox": {
+      "title": "新聞收件匣",
+      "subtitle": "從各國 RSS 來源爬到的草稿新聞，按最新到舊排序。挑選要編輯或發布的，其他刪掉。",
+      "tiles": {
+        "pending": "待處理",
+        "sources": "活躍來源",
+        "shown": "本頁顯示",
+        "archived": "已封存"
+      },
+      "ingestAll": "從所有來源拉新文章",
+      "ingestAllRunning": "抓取中…",
+      "sources": "個來源",
+      "created": "新增",
+      "skipped": "已存在跳過",
+      "errors": "個錯誤",
+      "filterBySource": "依來源篩選",
+      "allSources": "全部",
+      "apply": "套用",
+      "clearFilter": "清除篩選",
+      "crawled": "抓到",
+      "published": "原發布",
+      "noImage": "無圖",
+      "emptyTitle": "收件匣空空的 🎉",
+      "emptyHint": "按上方「拉取新文章」或先去 /admin/sources 替每個來源設定 RSS Feed URL。",
+      "limitNote": "本頁最多顯示 100 筆。請先處理掉一些再回來看後面的。",
+      "actions": {
+        "edit": "編輯",
+        "publish": "發布",
+        "delete": "刪除",
+        "deleteConfirm": "確定永久刪除這則草稿？無法復原。"
       }
     },
     "news": {

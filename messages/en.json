@@ -309,6 +309,7 @@
       "cities": "Cities",
       "drinks": "Drinks",
       "news": "News",
+      "newsInbox": "📥 News inbox",
       "sources": "Sources",
       "taxonomies": "Taxonomies",
       "companies": "Companies",
@@ -550,6 +551,38 @@
         "deleteConfirm": "Archive this drink? It won't be deleted, just hidden from the public site.",
         "validationErrors": "Some required fields are missing or invalid:",
         "back": "← Back to drinks"
+      }
+    },
+    "newsInbox": {
+      "title": "News inbox",
+      "subtitle": "Draft news crawled from RSS sources across countries, newest first. Pick what to edit and publish; delete the rest.",
+      "tiles": {
+        "pending": "Pending",
+        "sources": "Active sources",
+        "shown": "Shown",
+        "archived": "Archived"
+      },
+      "ingestAll": "Pull from all sources",
+      "ingestAllRunning": "Crawling…",
+      "sources": "sources",
+      "created": "new",
+      "skipped": "already-seen skipped",
+      "errors": "errors",
+      "filterBySource": "Filter by source",
+      "allSources": "All",
+      "apply": "Apply",
+      "clearFilter": "Clear filter",
+      "crawled": "Crawled",
+      "published": "Published",
+      "noImage": "No image",
+      "emptyTitle": "Inbox is empty 🎉",
+      "emptyHint": "Click 'Pull from all sources' above, or set an RSS Feed URL on each source first under /admin/sources.",
+      "limitNote": "Showing first 100. Process some to see the rest.",
+      "actions": {
+        "edit": "Edit",
+        "publish": "Publish",
+        "delete": "Delete",
+        "deleteConfirm": "Permanently delete this draft? Cannot be undone."
       }
     },
     "news": {
