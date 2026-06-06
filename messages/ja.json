@@ -310,6 +310,7 @@
       "drinks": "ドリンク",
       "news": "ニュース",
       "newsInbox": "📥 ニュース受信箱",
+      "searchQueries": "🔎 Google 検索設定",
       "sources": "ニュース出典",
       "taxonomies": "統制語彙",
       "companies": "親会社",
@@ -553,6 +554,28 @@
         "back": "← ドリンク一覧へ"
       }
     },
+    "searchQueries": {
+      "listTitle": "Google 検索設定",
+      "listSubtitle": "現在 {count} 件のクエリが設定されています。",
+      "create": "新規クエリ",
+      "never": "未実行",
+      "emptyTitle": "まだ Google News 検索クエリが設定されていません。",
+      "emptyHint": "例：label「日本タピオカ 新店」、query「タピオカ OR 珍珠奶茶」、locale ja、country JP",
+      "table": { "label": "ラベル", "query": "クエリ", "locale": "言語", "country": "国", "enabled": "有効", "lastCrawled": "最終取得" },
+      "edit": {
+        "title": "検索クエリ編集", "createTitle": "新規検索クエリ", "back": "← クエリ一覧へ",
+        "saveButton": "保存", "saving": "保存中…", "saved": "保存しました",
+        "deleteButton": "削除", "deleteConfirm": "削除しますか？取得済ニュースには影響しません。",
+        "fields": {
+          "label": "ラベル", "labelHint": "管理画面で識別する名前",
+          "query": "クエリ文字列", "queryHint": "Google 高度な検索構文 OR / -word / \"phrase\" 対応",
+          "locale": "結果言語", "localeHint": "Google News UI ロケール",
+          "countryCode": "国（ISO Alpha-2）", "countryCodeHint": "任意；国を限定",
+          "enabled": "有効（OFF で一時停止）"
+        },
+        "preview": { "label": "Google News RSS URL プレビュー", "hint": "ingest はこの URL を取得します。" }
+      }
+    },
     "newsInbox": {
       "title": "ニュース受信箱",
       "subtitle": "各国 RSS ソースからクロールしたドラフト記事を新しい順に表示。編集・公開するものを選び、残りは削除。",
@@ -562,8 +585,12 @@
         "shown": "表示中",
         "archived": "アーカイブ済"
       },
-      "ingestAll": "全ソースから取得",
+      "ingestAll": "RSS ソースから取得",
       "ingestAllRunning": "取得中…",
+      "googleCrawl": "Google News から検索",
+      "googleCrawlRunning": "検索中…",
+      "queries": "クエリ",
+      "sourcesAuto": "自動作成ソース",
       "sources": "ソース",
       "created": "新規",
       "skipped": "既存スキップ",

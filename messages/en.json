@@ -310,6 +310,7 @@
       "drinks": "Drinks",
       "news": "News",
       "newsInbox": "📥 News inbox",
+      "searchQueries": "🔎 Google search queries",
       "sources": "Sources",
       "taxonomies": "Taxonomies",
       "companies": "Companies",
@@ -553,6 +554,47 @@
         "back": "← Back to drinks"
       }
     },
+    "searchQueries": {
+      "listTitle": "Google search queries",
+      "listSubtitle": "{count} queries configured. Enabled queries are pulled by the ingest job.",
+      "create": "New query",
+      "never": "Never",
+      "emptyTitle": "No Google News search queries configured yet.",
+      "emptyHint": "Examples:\n• label \"Japan bubble tea expansion\", query \"タピオカ OR 珍珠奶茶\", locale ja, country JP\n• label \"Global bubble tea new flavors\", query \"bubble tea OR boba new flavor\", locale en, country (blank)\n• label \"TW bubble tea openings\", query \"珍珠奶茶 OR 手搖飲 展店\", locale zh-TW, country TW",
+      "table": {
+        "label": "Label",
+        "query": "Query",
+        "locale": "Locale",
+        "country": "Country",
+        "enabled": "Enabled",
+        "lastCrawled": "Last crawled"
+      },
+      "edit": {
+        "title": "Edit search query",
+        "createTitle": "New search query",
+        "back": "← Back to search queries",
+        "saveButton": "Save",
+        "saving": "Saving…",
+        "saved": "Saved",
+        "deleteButton": "Delete",
+        "deleteConfirm": "Delete this search query? News already ingested won't be affected.",
+        "fields": {
+          "label": "Label (for admin recognition)",
+          "labelHint": "e.g. \"Japan bubble tea expansion\", \"Global bubble tea new flavors\"",
+          "query": "Search string",
+          "queryHint": "Supports Google operators: OR / -word / \"phrase\". e.g. bubble tea OR boba expansion",
+          "locale": "Result language",
+          "localeHint": "Google News UI locale; affects returned headline language",
+          "countryCode": "Country (ISO Alpha-2)",
+          "countryCodeHint": "Optional; restrict results to one country, e.g. JP, TW, US",
+          "enabled": "Enabled (disable to pause without deleting)"
+        },
+        "preview": {
+          "label": "Google News RSS URL preview",
+          "hint": "Click to open; this is the exact feed URL the ingest job hits."
+        }
+      }
+    },
     "newsInbox": {
       "title": "News inbox",
       "subtitle": "Draft news crawled from RSS sources across countries, newest first. Pick what to edit and publish; delete the rest.",
@@ -562,8 +604,12 @@
         "shown": "Shown",
         "archived": "Archived"
       },
-      "ingestAll": "Pull from all sources",
+      "ingestAll": "Pull from RSS sources",
       "ingestAllRunning": "Crawling…",
+      "googleCrawl": "Crawl Google News",
+      "googleCrawlRunning": "Searching…",
+      "queries": "queries",
+      "sourcesAuto": "auto-created sources",
       "sources": "sources",
       "created": "new",
       "skipped": "already-seen skipped",

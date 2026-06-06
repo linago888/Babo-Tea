@@ -91,6 +91,84 @@ export function InboxRowActions({ newsId }: { newsId: string }) {
 }
 
 /**
+ * 從 Google News 搜尋查詢拉取
+ */
+export function GoogleNewsCrawlButton() {
+  const t = useTranslations("admin.newsInbox");
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{
+    queries: number;
+    created: number;
+    skipped: number;
+    sourcesCreated: number;
+    errors: number;
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run() {
+    setBusy(true);
+    setResult(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/news/search-crawl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = (await res.json()) as
+        | {
+            ok: true;
+            summaries: Array<{
+              created: number;
+              skipped: number;
+              sourcesAutoCreated: number;
+              errors: Array<unknown>;
+            }>;
+          }
+        | { ok: false; error?: string };
+      if (!data.ok) {
+        setError("error" in data && data.error ? data.error : "Google News crawl failed");
+        setBusy(false);
+        return;
+      }
+      const created = data.summaries.reduce((s, x) => s + x.created, 0);
+      const skipped = data.summaries.reduce((s, x) => s + x.skipped, 0);
+      const sourcesCreated = data.summaries.reduce((s, x) => s + x.sourcesAutoCreated, 0);
+      const errors = data.summaries.reduce((s, x) => s + x.errors.length, 0);
+      setResult({ queries: data.summaries.length, created, skipped, sourcesCreated, errors });
+      setBusy(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <button
+        type="button"
+        onClick={run}
+        disabled={busy}
+        className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-800 disabled:opacity-50 dark:bg-emerald-700 dark:hover:bg-emerald-600"
+      >
+        {busy ? `🔎 ${t("googleCrawlRunning")}` : `🔎 ${t("googleCrawl")}`}
+      </button>
+      {result ? (
+        <p className="text-xs text-emerald-700 dark:text-emerald-400">
+          ✓ {result.queries} {t("queries")} · +{result.created} {t("created")} ·{" "}
+          {result.skipped} {t("skipped")}
+          {result.sourcesCreated > 0 ? ` · +${result.sourcesCreated} ${t("sourcesAuto")}` : ""}
+          {result.errors > 0 ? ` · ${result.errors} ${t("errors")}` : ""}
+        </p>
+      ) : null}
+      {error ? <p className="text-xs text-rose-700 dark:text-rose-400">⚠ {error}</p> : null}
+    </div>
+  );
+}
+
+/**
  * Header 上的「拉取所有來源」按鈕
  */
 export function IngestAllButton() {

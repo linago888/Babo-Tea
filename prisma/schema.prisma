@@ -708,6 +708,34 @@ model MetricDaily {
 }
 
 // ─────────────────────────────────────────────────────────────
+// news_search_queries — Google News 搜尋查詢（Phase 5H）
+//
+// 後台可以新增多個查詢 — 例如：
+//   { label: "Bubble tea expansion global", query: "bubble tea expansion OR new store", locale: "en", countryCode: null }
+//   { label: "タピオカ 新店",                query: "タピオカ OR 珍珠奶茶",            locale: "ja", countryCode: "JP" }
+//   { label: "珍奶展店 (TW)",               query: "珍珠奶茶 OR 手搖飲",              locale: "zh-TW", countryCode: "TW" }
+//
+// 每個查詢轉成 https://news.google.com/rss/search?q=<query>&hl=<locale>&gl=<country>
+// 由 ingest job 拉新文章建為 DRAFT News。各 publisher domain 會被 auto-create
+// 為 Source（status=DRAFT，編輯後可正式上線）。
+// ─────────────────────────────────────────────────────────────
+
+model NewsSearchQuery {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  label         String /// 人類可讀名稱，後台識別用，例「日本珍珠奶茶展店」
+  query         String /// 實際丟給 Google News 的 query string
+  locale        String /// BCP-47, e.g. 'en' / 'zh-TW' / 'ja'
+  countryCode   String?   @map("country_code") @db.Char(2) /// ISO 3166 alpha-2，可選
+  enabled       Boolean   @default(true) /// 關掉可暫停某查詢，無需刪除
+  lastCrawledAt DateTime? @map("last_crawled_at") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([enabled])
+  @@map("news_search_queries")
+}
+
+// ─────────────────────────────────────────────────────────────
 // search_log — 公開站搜尋紀錄（Phase 5D）
 //
 // 設計：

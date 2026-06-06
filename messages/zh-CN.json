@@ -310,6 +310,7 @@
       "drinks": "饮品",
       "news": "新闻",
       "newsInbox": "📥 新闻收件箱",
+      "searchQueries": "🔎 Google 搜索设定",
       "sources": "新闻来源",
       "taxonomies": "受控词汇",
       "companies": "母公司",
@@ -553,6 +554,28 @@
         "back": "← 回饮品列表"
       }
     },
+    "searchQueries": {
+      "listTitle": "Google 搜索设定",
+      "listSubtitle": "目前有 {count} 个搜索查询。",
+      "create": "新增查询",
+      "never": "从未",
+      "emptyTitle": "尚未设定任何查询。",
+      "emptyHint": "范例：label「日本珍珠奶茶展店」、query「タピオカ OR 珍珠奶茶」、locale ja、country JP",
+      "table": { "label": "名称", "query": "查询", "locale": "语言", "country": "国家", "enabled": "启用", "lastCrawled": "上次抓取" },
+      "edit": {
+        "title": "编辑搜索查询", "createTitle": "新增搜索查询", "back": "← 返回列表",
+        "saveButton": "保存", "saving": "保存中…", "saved": "已保存",
+        "deleteButton": "删除", "deleteConfirm": "确定删除？已抓的新闻不受影响。",
+        "fields": {
+          "label": "名称", "labelHint": "后台识别用",
+          "query": "查询字串", "queryHint": "支持 Google 进阶语法：OR / -word / \"phrase\"",
+          "locale": "结果语言", "localeHint": "Google News 介面语系",
+          "countryCode": "国家（ISO Alpha-2）", "countryCodeHint": "可选；限定国家",
+          "enabled": "启用"
+        },
+        "preview": { "label": "预览 Google News RSS URL", "hint": "ingest 抓的就是这个 URL。" }
+      }
+    },
     "newsInbox": {
       "title": "新闻收件箱",
       "subtitle": "从各国 RSS 来源爬到的草稿新闻，按最新到旧排序。挑选要编辑或发布的，其他删掉。",
@@ -562,8 +585,12 @@
         "shown": "本页显示",
         "archived": "已归档"
       },
-      "ingestAll": "从所有来源拉新文章",
+      "ingestAll": "从所有 RSS 来源拉",
       "ingestAllRunning": "抓取中…",
+      "googleCrawl": "从 Google News 搜索爬取",
+      "googleCrawlRunning": "搜索中…",
+      "queries": "个查询",
+      "sourcesAuto": "个自动建立的来源",
       "sources": "个来源",
       "created": "新增",
       "skipped": "已存在跳过",

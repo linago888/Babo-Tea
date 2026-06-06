@@ -310,6 +310,7 @@
       "drinks": "飲品",
       "news": "新聞",
       "newsInbox": "📥 新聞收件匣",
+      "searchQueries": "🔎 Google 搜尋設定",
       "sources": "新聞來源",
       "taxonomies": "受控詞彙",
       "companies": "母公司",
@@ -553,6 +554,47 @@
         "back": "← 回飲品列表"
       }
     },
+    "searchQueries": {
+      "listTitle": "Google 搜尋設定",
+      "listSubtitle": "目前有 {count} 個搜尋查詢。enabled 的查詢會被 ingest job 跑。",
+      "create": "新增查詢",
+      "never": "從未",
+      "emptyTitle": "還沒設定任何 Google News 搜尋查詢。",
+      "emptyHint": "範例：\n• label「日本珍珠奶茶展店」, query「タピオカ OR 珍珠奶茶」, locale ja, country JP\n• label「全球 bubble tea 新品」, query「bubble tea OR boba new flavor」, locale en, country (空)\n• label「珍奶展店 (TW)」, query「珍珠奶茶 OR 手搖飲 展店」, locale zh-TW, country TW",
+      "table": {
+        "label": "名稱",
+        "query": "查詢字串",
+        "locale": "語言",
+        "country": "國家",
+        "enabled": "啟用",
+        "lastCrawled": "上次抓取"
+      },
+      "edit": {
+        "title": "編輯搜尋查詢",
+        "createTitle": "新增搜尋查詢",
+        "back": "← 回搜尋查詢列表",
+        "saveButton": "儲存",
+        "saving": "儲存中…",
+        "saved": "已儲存",
+        "deleteButton": "刪除",
+        "deleteConfirm": "確定刪除此搜尋查詢？已抓進來的新聞不會受影響。",
+        "fields": {
+          "label": "名稱（後台識別用）",
+          "labelHint": "例：「日本タピオカ 新品」、「全球 bubble tea 展店」",
+          "query": "查詢字串",
+          "queryHint": "支援 Google 進階語法 OR / -word / \"phrase\"。例：bubble tea OR boba expansion",
+          "locale": "結果語言",
+          "localeHint": "Google News 介面語系；影響回來的標題語言",
+          "countryCode": "國家（ISO Alpha-2）",
+          "countryCodeHint": "可選；指定只看某國家的新聞，例 JP、TW、US",
+          "enabled": "啟用（關掉可暫停這個查詢）"
+        },
+        "preview": {
+          "label": "預覽 Google News RSS URL",
+          "hint": "點開可預覽 Google 會回給我們的 feed 內容；ingest 會抓這個 URL。"
+        }
+      }
+    },
     "newsInbox": {
       "title": "新聞收件匣",
       "subtitle": "從各國 RSS 來源爬到的草稿新聞，按最新到舊排序。挑選要編輯或發布的，其他刪掉。",
@@ -562,8 +604,12 @@
         "shown": "本頁顯示",
         "archived": "已封存"
       },
-      "ingestAll": "從所有來源拉新文章",
+      "ingestAll": "從所有 RSS 來源拉",
       "ingestAllRunning": "抓取中…",
+      "googleCrawl": "從 Google News 搜尋爬取",
+      "googleCrawlRunning": "搜尋中…",
+      "queries": "個查詢",
+      "sourcesAuto": "個自動建立的來源",
       "sources": "個來源",
       "created": "新增",
       "skipped": "已存在跳過",

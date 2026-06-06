@@ -23,6 +23,9 @@ export interface RssItem {
   title?: string;
   publishedAt?: string; // ISO 8601 if parseable
   guid?: string;
+  /** Google News RSS 帶的 <source url="..."></source>：原始發布者資訊 */
+  publisherName?: string;
+  publisherUrl?: string;
 }
 
 function decodeEntities(s: string): string {
@@ -91,12 +94,24 @@ export function parseRssXml(xml: string): RssItem[] {
       // 有些 feed 把 link 寫在 guid，且 isPermaLink="true"
       (pickTag(block, "guid") || null);
     if (!link || !/^https?:\/\//i.test(link.trim())) continue;
+
+    // Google News：<source url="https://publisher.com">Publisher</source>
+    let publisherName: string | undefined;
+    let publisherUrl: string | undefined;
+    const srcMatch = block.match(/<source\s+url=["']([^"']+)["'][^>]*>([^<]*)<\/source>/i);
+    if (srcMatch) {
+      publisherUrl = srcMatch[1].trim();
+      publisherName = decodeEntities(srcMatch[2]).trim() || undefined;
+    }
+
     items.push({
       link: link.trim(),
       title: pickTag(block, "title") ?? undefined,
       publishedAt:
         parseDate(pickTag(block, "pubDate")) ?? parseDate(pickTag(block, "dc:date")),
       guid: pickTag(block, "guid") ?? undefined,
+      publisherName,
+      publisherUrl,
     });
   }
 
