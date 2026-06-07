@@ -33,7 +33,32 @@ export default async function NewsInboxPage({
   const where: Prisma.NewsWhereInput = { status: "DRAFT" };
   if (sourceFilter) where.sourceId = sourceFilter;
 
-  const [items, sources, totalDraft, totalArchived] = await Promise.all([
+  // 先撈 DRAFT 數量 — 快、不阻塞，永遠不會失敗
+  const totalDraft = await prisma.news.count({ where: { status: "DRAFT" } });
+
+  // 空收件匣短路 — 不跑下面那些重的查詢
+  if (totalDraft === 0) {
+    return (
+      <>
+        <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">📥 {t("title")}</h1>
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t("subtitle")}</p>
+          </div>
+          <div className="flex flex-wrap items-end gap-2">
+            <GoogleNewsCrawlButton />
+            <IngestAllButton />
+          </div>
+        </header>
+        <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-10 text-center text-sm dark:border-neutral-700 dark:bg-neutral-900">
+          <p className="text-neutral-700 dark:text-neutral-300">{t("emptyTitle")}</p>
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{t("emptyHint")}</p>
+        </div>
+      </>
+    );
+  }
+
+  const [items, sources, totalArchived] = await Promise.all([
     prisma.news.findMany({
       where,
       orderBy: [{ createdAt: "desc" }, { publishedAt: "desc" }],
@@ -58,7 +83,6 @@ export default async function NewsInboxPage({
       select: { id: true, slug: true, nameI18n: true, _count: { select: { news: true } } },
       orderBy: { slug: "asc" },
     }),
-    prisma.news.count({ where: { status: "DRAFT" } }),
     prisma.news.count({ where: { status: "ARCHIVED" } }),
   ]);
 
