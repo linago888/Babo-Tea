@@ -625,6 +625,7 @@
       "crawled": "抓到",
       "published": "原發布",
       "noImage": "無圖",
+      "missingLocales": "尚未翻譯：{locales}（點進去用 ✨ AI 補完）",
       "emptyTitle": "收件匣空空的 🎉",
       "emptyHint": "按上方「拉取新文章」或先去 /admin/sources 替每個來源設定 RSS Feed URL。",
       "limitNote": "本頁最多顯示 100 筆。請先處理掉一些再回來看後面的。",

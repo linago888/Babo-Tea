@@ -609,6 +609,7 @@
       "crawled": "取得",
       "published": "原公開",
       "noImage": "画像なし",
+      "missingLocales": "未翻訳: {locales}（開いて ✨ AI 補完を使用）",
       "emptyTitle": "受信箱は空です 🎉",
       "emptyHint": "上の「全ソースから取得」をクリック、または /admin/sources で各ソースに RSS Feed URL を設定してください。",
       "limitNote": "最大 100 件を表示中。処理を進めてから残りをご確認ください。",

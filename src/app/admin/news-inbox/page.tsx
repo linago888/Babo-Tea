@@ -18,6 +18,23 @@ function parse(sp: SearchParams, key: string): string | undefined {
   return Array.isArray(v) ? v[0] : v;
 }
 
+/**
+ * 從 i18n jsonb 欄位收集所有已填寫（非空字串）的 locale 版本，
+ * 用我們支援的 4 個 locale 的順序回傳。
+ */
+function collectFilledLocales(field: unknown): Array<{ locale: string; value: string }> {
+  if (!field || typeof field !== "object") return [];
+  const map = field as Record<string, unknown>;
+  const out: Array<{ locale: string; value: string }> = [];
+  for (const lc of routing.locales as readonly string[]) {
+    const v = map[lc];
+    if (typeof v === "string" && v.trim().length > 0) {
+      out.push({ locale: lc, value: v.trim() });
+    }
+  }
+  return out;
+}
+
 type ItemRow = {
   id: string;
   slug: string;
@@ -191,18 +208,30 @@ async function renderInbox(searchParamsPromise: Promise<SearchParams>) {
       ) : (
         <ul className="flex flex-col gap-3">
           {items.map((n) => {
+            // 蒐集 titleI18n / summaryI18n 裡所有 *已填寫* 的 locale 版本
+            const titles = collectFilledLocales(n.titleI18n);
+            const summaries = collectFilledLocales(n.summaryI18n);
+
+            // 決定 primary locale — 優先用 source.primaryLanguage（爬蟲塞到那個 locale）
             const rawLang = n.source?.primaryLanguage ?? locale;
             const supported = routing.locales as readonly string[];
-            const lc = (supported.includes(rawLang) ? rawLang : locale) as Locale;
-            const title =
-              pickI18n(n.titleI18n, lc, { fallback: "" }) ||
-              pickI18n(n.titleI18n, locale, { fallback: n.slug });
-            const excerpt =
-              pickI18n(n.summaryI18n, lc, { fallback: "" }) ||
-              pickI18n(n.summaryI18n, locale, { fallback: "" });
+            const primaryLocale: string =
+              titles.find((tt) => tt.locale === rawLang)?.locale ??
+              titles.find((tt) => tt.locale === locale)?.locale ??
+              titles[0]?.locale ??
+              rawLang;
+
+            const primaryTitle = titles.find((tt) => tt.locale === primaryLocale);
+            const primarySummary = summaries.find((tt) => tt.locale === primaryLocale);
+            const otherTitles = titles.filter((tt) => tt.locale !== primaryLocale);
+
             const sourceName = n.source
               ? pickI18n(n.source.nameI18n, locale, { fallback: n.source.slug })
               : "(no source)";
+
+            const missingLocales = (supported as readonly string[]).filter(
+              (loc) => !titles.some((tt) => tt.locale === loc),
+            );
 
             return (
               <li
@@ -226,7 +255,6 @@ async function renderInbox(searchParamsPromise: Promise<SearchParams>) {
                   <div className="flex flex-wrap items-baseline gap-2 text-[11px] text-neutral-500 dark:text-neutral-400">
                     <span className="font-medium text-neutral-700 dark:text-neutral-300">{sourceName}</span>
                     {n.source?.countryCode ? <span>{n.source.countryCode}</span> : null}
-                    <span className="font-mono">{rawLang}</span>
                     <span>·</span>
                     <span>{t("crawled")}: {formatDate(n.createdAt, locale, { dateStyle: "short" })}</span>
                     <span>·</span>
@@ -236,21 +264,87 @@ async function renderInbox(searchParamsPromise: Promise<SearchParams>) {
                         {n.completenessScore}
                       </span>
                     ) : null}
+                    {/* 語系完成度狀態：✓ 已填 / ⚠ 未填 */}
+                    <span className="ml-auto flex gap-1">
+                      {(supported as readonly string[]).map((loc) => {
+                        const filled = titles.some((tt) => tt.locale === loc);
+                        return (
+                          <span
+                            key={loc}
+                            className={`rounded px-1 font-mono text-[9px] ${
+                              filled
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+                                : "bg-neutral-100 text-neutral-400 line-through dark:bg-neutral-800"
+                            }`}
+                            title={filled ? `${loc} title filled` : `${loc} title missing`}
+                          >
+                            {loc}
+                          </span>
+                        );
+                      })}
+                    </span>
                   </div>
-                  <h2 className="mt-1 text-base font-semibold leading-snug text-neutral-900 dark:text-neutral-50">
-                    <Link href={`/admin/news/${n.id}`} className="hover:text-rose-700 dark:hover:text-rose-400">
-                      {title || n.slug}
-                    </Link>
-                  </h2>
-                  {excerpt ? (
-                    <p className="mt-1 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-400">{excerpt}</p>
+
+                  {/* Primary 標題 */}
+                  <div className="mt-1 flex items-baseline gap-1.5">
+                    <span className="rounded bg-rose-100 px-1 font-mono text-[9px] text-rose-800 dark:bg-rose-950 dark:text-rose-200">
+                      {primaryLocale}
+                    </span>
+                    <h2 className="text-base font-semibold leading-snug text-neutral-900 dark:text-neutral-50">
+                      <Link href={`/admin/news/${n.id}`} className="hover:text-rose-700 dark:hover:text-rose-400">
+                        {primaryTitle?.value || n.slug}
+                      </Link>
+                    </h2>
+                  </div>
+
+                  {primarySummary?.value ? (
+                    <p className="mt-1 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-400">
+                      {primarySummary.value}
+                    </p>
                   ) : null}
+
+                  {/* 其他 locale 的標題（若有） */}
+                  {otherTitles.length > 0 ? (
+                    <ul className="mt-2 space-y-1">
+                      {otherTitles.map((tt) => {
+                        const sm = summaries.find((s) => s.locale === tt.locale);
+                        return (
+                          <li
+                            key={tt.locale}
+                            className="rounded-md border border-neutral-100 bg-neutral-50 p-2 text-xs dark:border-neutral-800 dark:bg-neutral-800/40"
+                          >
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="rounded bg-violet-100 px-1 font-mono text-[9px] text-violet-800 dark:bg-violet-950 dark:text-violet-200">
+                                {tt.locale}
+                              </span>
+                              <span className="line-clamp-1 font-medium text-neutral-800 dark:text-neutral-200">
+                                {tt.value}
+                              </span>
+                            </div>
+                            {sm?.value ? (
+                              <p className="mt-0.5 line-clamp-1 pl-9 text-[11px] text-neutral-500 dark:text-neutral-400">
+                                {sm.value}
+                              </p>
+                            ) : null}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : null}
+
+                  {/* 未翻譯提示 */}
+                  {missingLocales.length > 0 ? (
+                    <p className="mt-2 text-[10px] text-amber-700 dark:text-amber-400">
+                      ⚠ {t("missingLocales", { locales: missingLocales.join(" · ") })}
+                    </p>
+                  ) : null}
+
                   {n.sourceUrl ? (
                     <a
                       href={n.sourceUrl}
                       target="_blank"
                       rel="noreferrer noopener nofollow"
-                      className="mt-1 inline-block max-w-full truncate text-[11px] text-amber-700 hover:underline dark:text-amber-400"
+                      className="mt-2 inline-block max-w-full truncate text-[11px] text-amber-700 hover:underline dark:text-amber-400"
                     >
                       ↗ {n.sourceUrl}
                     </a>

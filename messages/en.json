@@ -625,6 +625,7 @@
       "crawled": "Crawled",
       "published": "Published",
       "noImage": "No image",
+      "missingLocales": "Missing locales: {locales} (open and use ✨ AI fill)",
       "emptyTitle": "Inbox is empty 🎉",
       "emptyHint": "Click 'Pull from all sources' above, or set an RSS Feed URL on each source first under /admin/sources.",
       "limitNote": "Showing first 100. Process some to see the rest.",

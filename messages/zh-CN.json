@@ -609,6 +609,7 @@
       "crawled": "抓到",
       "published": "原发布",
       "noImage": "无图",
+      "missingLocales": "尚未翻译：{locales}（点进去用 ✨ AI 补完）",
       "emptyTitle": "收件箱空空的 🎉",
       "emptyHint": "按上方「拉取新文章」或先去 /admin/sources 为每个来源设定 RSS Feed URL。",
       "limitNote": "本页最多显示 100 笔。请先处理一些再回来看后面的。",
