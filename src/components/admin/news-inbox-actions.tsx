@@ -116,7 +116,20 @@ export function GoogleNewsCrawlButton() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
-      const data = (await res.json()) as
+      const text = await res.text();
+      let data: unknown = null;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        // Vercel timeout / 500 HTML page → 顯示真實狀態
+        const snippet = text.slice(0, 200).replace(/<[^>]+>/g, "").trim();
+        setError(
+          `HTTP ${res.status} ${res.statusText} — 可能是 function timeout（Vercel Hobby 上限 60s）。建議先停用部分查詢或縮減 query 範圍。${snippet ? ` 回應片段：${snippet}` : ""}`,
+        );
+        setBusy(false);
+        return;
+      }
+      const typed = data as
         | {
             ok: true;
             summaries: Array<{
@@ -127,16 +140,16 @@ export function GoogleNewsCrawlButton() {
             }>;
           }
         | { ok: false; error?: string };
-      if (!data.ok) {
-        setError("error" in data && data.error ? data.error : "Google News crawl failed");
+      if (!typed.ok) {
+        setError("error" in typed && typed.error ? typed.error : "Google News crawl failed");
         setBusy(false);
         return;
       }
-      const created = data.summaries.reduce((s, x) => s + x.created, 0);
-      const skipped = data.summaries.reduce((s, x) => s + x.skipped, 0);
-      const sourcesCreated = data.summaries.reduce((s, x) => s + x.sourcesAutoCreated, 0);
-      const errors = data.summaries.reduce((s, x) => s + x.errors.length, 0);
-      setResult({ queries: data.summaries.length, created, skipped, sourcesCreated, errors });
+      const created = typed.summaries.reduce((s, x) => s + x.created, 0);
+      const skipped = typed.summaries.reduce((s, x) => s + x.skipped, 0);
+      const sourcesCreated = typed.summaries.reduce((s, x) => s + x.sourcesAutoCreated, 0);
+      const errors = typed.summaries.reduce((s, x) => s + x.errors.length, 0);
+      setResult({ queries: typed.summaries.length, created, skipped, sourcesCreated, errors });
       setBusy(false);
       router.refresh();
     } catch (err) {

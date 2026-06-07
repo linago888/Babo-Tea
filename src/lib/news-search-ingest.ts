@@ -33,7 +33,13 @@ export interface SearchIngestSummary {
   skipped: number;
   sourcesAutoCreated: number;
   errors: Array<{ url: string; message: string }>;
+  truncated?: boolean; // 達到 per-query 上限提前停
 }
+
+/** 每個 query 最多處理幾篇 — 避免單個 query 就吃光 function 時間 */
+const MAX_ITEMS_PER_QUERY = 15;
+/** 整個 ingest 用的全域 budget（秒）— 接近 Vercel maxDuration 時提前收手 */
+const GLOBAL_BUDGET_MS = 50_000;
 
 /** 找或自動建 source — 回傳 sourceId */
 async function findOrCreateSource(
@@ -234,7 +240,12 @@ async function processItem(
   summary.created += 1;
 }
 
-export async function ingestSearchQuery(queryId: string): Promise<SearchIngestSummary> {
+export async function ingestSearchQuery(
+  queryId: string,
+  options: { startedAt?: number; maxItems?: number } = {},
+): Promise<SearchIngestSummary> {
+  const startedAt = options.startedAt ?? Date.now();
+  const maxItems = options.maxItems ?? MAX_ITEMS_PER_QUERY;
   const q = await prisma.newsSearchQuery.findUnique({ where: { id: queryId } });
   if (!q) throw new Error("Query not found");
 
@@ -262,7 +273,16 @@ export async function ingestSearchQuery(queryId: string): Promise<SearchIngestSu
   }
   summary.itemsInFeed = items.length;
 
+  let processed = 0;
   for (const item of items) {
+    if (processed >= maxItems) {
+      summary.truncated = true;
+      break;
+    }
+    if (Date.now() - startedAt > GLOBAL_BUDGET_MS) {
+      summary.truncated = true;
+      break;
+    }
     try {
       await processItem(item, q, summary);
     } catch (err) {
@@ -271,6 +291,7 @@ export async function ingestSearchQuery(queryId: string): Promise<SearchIngestSu
         message: err instanceof Error ? err.message : "Unknown",
       });
     }
+    processed += 1;
   }
 
   await prisma.newsSearchQuery.update({
@@ -286,10 +307,25 @@ export async function ingestAllEnabledQueries(): Promise<SearchIngestSummary[]> 
     where: { enabled: true },
     select: { id: true, label: true },
   });
+  const startedAt = Date.now();
   const out: SearchIngestSummary[] = [];
   for (const q of queries) {
+    if (Date.now() - startedAt > GLOBAL_BUDGET_MS) {
+      // 超過全域預算，剩下的查詢標 truncated 跳過
+      out.push({
+        queryId: q.id,
+        queryLabel: q.label,
+        itemsInFeed: 0,
+        created: 0,
+        skipped: 0,
+        sourcesAutoCreated: 0,
+        errors: [],
+        truncated: true,
+      });
+      continue;
+    }
     try {
-      out.push(await ingestSearchQuery(q.id));
+      out.push(await ingestSearchQuery(q.id, { startedAt }));
     } catch (err) {
       out.push({
         queryId: q.id,

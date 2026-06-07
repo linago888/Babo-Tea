@@ -16,7 +16,7 @@
 
 const USER_AGENT =
   "Global Boba Graph Bot/1.0 (+https://babo-tea.vercel.app/about/bot)";
-const FETCH_TIMEOUT_MS = 10_000;
+const FETCH_TIMEOUT_MS = 6_000;
 const MAX_BYTES = 5 * 1024 * 1024;
 
 export interface CrawlResult {
