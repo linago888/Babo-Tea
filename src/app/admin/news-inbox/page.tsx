@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { GoogleNewsCrawlButton, IngestAllButton, InboxRowActions } from "@/components/admin/news-inbox-actions";
 import { getAdminLocale } from "@/lib/admin-i18n";
-import { type Locale } from "@/i18n/routing";
+import { type Locale, routing } from "@/i18n/routing";
 import { pickI18n } from "@/lib/i18n-text";
 import { formatDate } from "@/lib/intl";
 import { prisma } from "@/lib/prisma";
@@ -18,6 +18,39 @@ function parse(sp: SearchParams, key: string): string | undefined {
   return Array.isArray(v) ? v[0] : v;
 }
 
+/**
+ * 把任意 Prisma 例外轉成回退值；同時保留訊息給 UI 顯示警告條
+ */
+async function safeQuery<T>(label: string, fn: () => Promise<T>, fallback: T): Promise<{ value: T; error: string | null }> {
+  try {
+    return { value: await fn(), error: null };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // eslint-disable-next-line no-console
+    console.error(`[news-inbox] ${label} failed:`, msg);
+    return { value: fallback, error: `${label}: ${msg}` };
+  }
+}
+
+type ItemRow = {
+  id: string;
+  slug: string;
+  titleI18n: unknown;
+  summaryI18n: unknown;
+  heroImageUrl: string | null;
+  sourceUrl: string;
+  publishedAt: Date;
+  createdAt: Date;
+  completenessScore: number | null;
+  source: {
+    id: string;
+    slug: string;
+    nameI18n: unknown;
+    countryCode: string | null;
+    primaryLanguage: string;
+  };
+};
+
 export default async function NewsInboxPage({
   searchParams,
 }: {
@@ -29,27 +62,72 @@ export default async function NewsInboxPage({
   const sp = await searchParams;
   const sourceFilter = parse(sp, "sourceId");
 
-  // 「待處理」 = DRAFT；按 createdAt DESC（最新爬到的優先）
   const where: Prisma.NewsWhereInput = { status: "DRAFT" };
   if (sourceFilter) where.sourceId = sourceFilter;
 
-  // 先撈 DRAFT 數量 — 快、不阻塞，永遠不會失敗
-  const totalDraft = await prisma.news.count({ where: { status: "DRAFT" } });
+  // 每個 query 獨立隔離 — 任一個失敗也不擋整頁
+  const countResult = await safeQuery("count DRAFT", () => prisma.news.count({ where: { status: "DRAFT" } }), 0);
+  const totalDraft = countResult.value;
 
-  // 空收件匣短路 — 不跑下面那些重的查詢
-  if (totalDraft === 0) {
+  const archivedResult = await safeQuery(
+    "count ARCHIVED",
+    () => prisma.news.count({ where: { status: "ARCHIVED" } }),
+    0,
+  );
+  const totalArchived = archivedResult.value;
+
+  const itemsResult = await safeQuery<ItemRow[]>(
+    "findMany news",
+    () =>
+      prisma.news.findMany({
+        where,
+        orderBy: [{ createdAt: "desc" }, { publishedAt: "desc" }],
+        take: 100,
+        select: {
+          id: true,
+          slug: true,
+          titleI18n: true,
+          summaryI18n: true,
+          heroImageUrl: true,
+          sourceUrl: true,
+          publishedAt: true,
+          createdAt: true,
+          completenessScore: true,
+          source: {
+            select: { id: true, slug: true, nameI18n: true, countryCode: true, primaryLanguage: true },
+          },
+        },
+      }) as unknown as Promise<ItemRow[]>,
+    [] as ItemRow[],
+  );
+  const items = itemsResult.value;
+
+  // 從 items 直接 dedupe sources — 不再跑 source.findMany 的 nested where（Supabase pooler 對 some/_count 不穩定）
+  const sourceMap = new Map<string, { id: string; nameI18n: unknown; slug: string; count: number }>();
+  for (const n of items) {
+    const existing = sourceMap.get(n.source.id);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      sourceMap.set(n.source.id, {
+        id: n.source.id,
+        slug: n.source.slug,
+        nameI18n: n.source.nameI18n,
+        count: 1,
+      });
+    }
+  }
+  const sources = [...sourceMap.values()].sort((a, b) => a.slug.localeCompare(b.slug));
+
+  const errors = [countResult.error, archivedResult.error, itemsResult.error].filter(
+    (x): x is string => x !== null,
+  );
+
+  // 空收件匣短路
+  if (totalDraft === 0 && errors.length === 0) {
     return (
       <>
-        <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">📥 {t("title")}</h1>
-            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t("subtitle")}</p>
-          </div>
-          <div className="flex flex-wrap items-end gap-2">
-            <GoogleNewsCrawlButton />
-            <IngestAllButton />
-          </div>
-        </header>
+        <Header t={t} />
         <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-10 text-center text-sm dark:border-neutral-700 dark:bg-neutral-900">
           <p className="text-neutral-700 dark:text-neutral-300">{t("emptyTitle")}</p>
           <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{t("emptyHint")}</p>
@@ -58,48 +136,21 @@ export default async function NewsInboxPage({
     );
   }
 
-  const [items, sources, totalArchived] = await Promise.all([
-    prisma.news.findMany({
-      where,
-      orderBy: [{ createdAt: "desc" }, { publishedAt: "desc" }],
-      take: 100,
-      select: {
-        id: true,
-        slug: true,
-        titleI18n: true,
-        summaryI18n: true,
-        heroImageUrl: true,
-        sourceUrl: true,
-        publishedAt: true,
-        createdAt: true,
-        completenessScore: true,
-        source: {
-          select: { id: true, slug: true, nameI18n: true, countryCode: true, primaryLanguage: true },
-        },
-      },
-    }),
-    prisma.source.findMany({
-      where: { news: { some: { status: "DRAFT" } } },
-      select: { id: true, slug: true, nameI18n: true, _count: { select: { news: true } } },
-      orderBy: { slug: "asc" },
-    }),
-    prisma.news.count({ where: { status: "ARCHIVED" } }),
-  ]);
-
   return (
     <>
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">📥 {t("title")}</h1>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t("subtitle")}</p>
-        </div>
-        <div className="flex flex-wrap items-end gap-2">
-          <GoogleNewsCrawlButton />
-          <IngestAllButton />
-        </div>
-      </header>
+      <Header t={t} />
 
-      {/* Tiles */}
+      {errors.length > 0 ? (
+        <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs dark:border-amber-800 dark:bg-amber-950">
+          <p className="font-medium text-amber-900 dark:text-amber-100">⚠ 部分查詢失敗（已用回退值繼續渲染）：</p>
+          <ul className="mt-1 list-inside list-disc text-amber-800 dark:text-amber-200">
+            {errors.map((e, i) => (
+              <li key={i} className="font-mono">{e}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <ul className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Tile label={t("tiles.pending")} value={totalDraft} tone="warn" />
         <Tile label={t("tiles.sources")} value={sources.length} />
@@ -107,11 +158,8 @@ export default async function NewsInboxPage({
         <Tile label={t("tiles.archived")} value={totalArchived} />
       </ul>
 
-      {/* Source filter */}
       <form className="mb-4 flex flex-wrap items-center gap-2" method="get">
-        <label className="text-xs text-neutral-500 dark:text-neutral-400">
-          {t("filterBySource")}:
-        </label>
+        <label className="text-xs text-neutral-500 dark:text-neutral-400">{t("filterBySource")}:</label>
         <select
           name="sourceId"
           defaultValue={sourceFilter ?? ""}
@@ -120,7 +168,7 @@ export default async function NewsInboxPage({
           <option value="">{t("allSources")}</option>
           {sources.map((s) => (
             <option key={s.id} value={s.id}>
-              {pickI18n(s.nameI18n, locale, { fallback: s.slug })} ({s._count.news})
+              {pickI18n(s.nameI18n, locale, { fallback: s.slug })} ({s.count})
             </option>
           ))}
         </select>
@@ -131,10 +179,7 @@ export default async function NewsInboxPage({
           {t("apply")}
         </button>
         {sourceFilter ? (
-          <Link
-            href="/admin/news-inbox"
-            className="text-xs text-rose-700 hover:underline dark:text-rose-400"
-          >
+          <Link href="/admin/news-inbox" className="text-xs text-rose-700 hover:underline dark:text-rose-400">
             {t("clearFilter")}
           </Link>
         ) : null}
@@ -148,8 +193,10 @@ export default async function NewsInboxPage({
       ) : (
         <ul className="flex flex-col gap-3">
           {items.map((n) => {
-            // 用 source 的 primary_language 取得標題（爬蟲塞到該 locale）
-            const lc = n.source.primaryLanguage as Locale;
+            // primaryLanguage 可能不在我們支援的 locales 之中（e.g. 'en-US'）— normalize
+            const rawLang = n.source.primaryLanguage;
+            const supported = routing.locales as readonly string[];
+            const lc = (supported.includes(rawLang) ? rawLang : locale) as Locale;
             const title =
               pickI18n(n.titleI18n, lc, { fallback: "" }) ||
               pickI18n(n.titleI18n, locale, { fallback: n.slug });
@@ -169,7 +216,6 @@ export default async function NewsInboxPage({
                     src={n.heroImageUrl}
                     alt=""
                     className="h-24 w-24 shrink-0 rounded-md object-cover sm:h-28 sm:w-40"
-                    onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
                   />
                 ) : (
                   <div className="hidden h-28 w-40 shrink-0 items-center justify-center rounded-md bg-neutral-100 text-xs text-neutral-400 sm:flex dark:bg-neutral-800">
@@ -179,19 +225,13 @@ export default async function NewsInboxPage({
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-2 text-[11px] text-neutral-500 dark:text-neutral-400">
-                    <span className="font-medium text-neutral-700 dark:text-neutral-300">
-                      {sourceName}
-                    </span>
+                    <span className="font-medium text-neutral-700 dark:text-neutral-300">{sourceName}</span>
                     {n.source.countryCode ? <span>{n.source.countryCode}</span> : null}
-                    <span className="font-mono">{n.source.primaryLanguage}</span>
+                    <span className="font-mono">{rawLang}</span>
                     <span>·</span>
-                    <span>
-                      {t("crawled")}: {formatDate(n.createdAt, locale, { dateStyle: "short" })}
-                    </span>
+                    <span>{t("crawled")}: {formatDate(n.createdAt, locale, { dateStyle: "short" })}</span>
                     <span>·</span>
-                    <span>
-                      {t("published")}: {formatDate(n.publishedAt, locale, { dateStyle: "short" })}
-                    </span>
+                    <span>{t("published")}: {formatDate(n.publishedAt, locale, { dateStyle: "short" })}</span>
                     {n.completenessScore !== null ? (
                       <span className="rounded-full bg-neutral-100 px-1.5 text-[10px] font-mono tabular-nums text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
                         {n.completenessScore}
@@ -199,17 +239,12 @@ export default async function NewsInboxPage({
                     ) : null}
                   </div>
                   <h2 className="mt-1 text-base font-semibold leading-snug text-neutral-900 dark:text-neutral-50">
-                    <Link
-                      href={`/admin/news/${n.id}`}
-                      className="hover:text-rose-700 dark:hover:text-rose-400"
-                    >
+                    <Link href={`/admin/news/${n.id}`} className="hover:text-rose-700 dark:hover:text-rose-400">
                       {title || n.slug}
                     </Link>
                   </h2>
                   {excerpt ? (
-                    <p className="mt-1 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-400">
-                      {excerpt}
-                    </p>
+                    <p className="mt-1 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-400">{excerpt}</p>
                   ) : null}
                   {n.sourceUrl ? (
                     <a
@@ -233,11 +268,24 @@ export default async function NewsInboxPage({
       )}
 
       {items.length >= 100 ? (
-        <p className="mt-6 text-center text-xs text-neutral-500 dark:text-neutral-400">
-          {t("limitNote")}
-        </p>
+        <p className="mt-6 text-center text-xs text-neutral-500 dark:text-neutral-400">{t("limitNote")}</p>
       ) : null}
     </>
+  );
+}
+
+function Header({ t }: { t: (key: string) => string }) {
+  return (
+    <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">📥 {t("title")}</h1>
+        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t("subtitle")}</p>
+      </div>
+      <div className="flex flex-wrap items-end gap-2">
+        <GoogleNewsCrawlButton />
+        <IngestAllButton />
+      </div>
+    </header>
   );
 }
 
@@ -257,9 +305,7 @@ function Tile({
   return (
     <li className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
       <p className={`text-2xl font-bold tabular-nums ${valueColor}`}>{value}</p>
-      <p className="mt-1 text-[11px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-        {label}
-      </p>
+      <p className="mt-1 text-[11px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">{label}</p>
     </li>
   );
 }
