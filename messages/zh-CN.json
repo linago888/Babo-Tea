@@ -573,7 +573,14 @@
           "countryCode": "国家（ISO Alpha-2）", "countryCodeHint": "可选；限定国家",
           "enabled": "启用"
         },
-        "preview": { "label": "预览 Google News RSS URL", "hint": "ingest 抓的就是这个 URL。" }
+        "preview": {
+          "label": "预览 Google News RSS URL",
+          "hint": "ingest 抓的就是这个 URL。",
+          "fetch": "预览结果",
+          "fetching": "抓取中…",
+          "foundCount": "找到 {count} 篇新闻（显示前 30 篇）",
+          "noItems": "Google News 没回任何结果 — 试试放宽 query 或移除 country 限制。"
+        }
       }
     },
     "newsInbox": {

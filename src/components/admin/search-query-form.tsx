@@ -39,6 +39,63 @@ export default function SearchQueryForm({
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [topError, setTopError] = useState<string | null>(null);
 
+  // Preview state
+  const [previewing, setPreviewing] = useState(false);
+  const [previewItems, setPreviewItems] = useState<
+    | Array<{
+        title: string;
+        publisher: string | null;
+        publisherUrl: string | null;
+        publishedAt: string | null;
+        link: string;
+      }>
+    | null
+  >(null);
+  const [previewCount, setPreviewCount] = useState<number | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  async function runPreview() {
+    setPreviewing(true);
+    setPreviewError(null);
+    setPreviewItems(null);
+    setPreviewCount(null);
+    try {
+      const res = await fetch("/api/admin/news/search-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: values.query.trim(),
+          locale: values.locale,
+          countryCode: values.countryCode.trim() ? values.countryCode.trim().toUpperCase() : null,
+        }),
+      });
+      const data = (await res.json()) as
+        | {
+            ok: true;
+            itemCount: number;
+            items: Array<{
+              title: string;
+              publisher: string | null;
+              publisherUrl: string | null;
+              publishedAt: string | null;
+              link: string;
+            }>;
+          }
+        | { ok: false; error?: string };
+      if (!data.ok) {
+        setPreviewError("error" in data && data.error ? data.error : "Preview failed");
+        setPreviewing(false);
+        return;
+      }
+      setPreviewItems(data.items);
+      setPreviewCount(data.itemCount);
+      setPreviewing(false);
+    } catch (err) {
+      setPreviewError(err instanceof Error ? err.message : "Network error");
+      setPreviewing(false);
+    }
+  }
+
   // 預覽 — 動態組 Google News URL 給編輯看
   const previewUrl = (() => {
     if (!values.query || !values.locale) return null;
@@ -157,11 +214,78 @@ export default function SearchQueryForm({
 
       {previewUrl ? (
         <div className="rounded-md border border-violet-200 bg-violet-50 p-3 text-xs dark:border-violet-900 dark:bg-violet-950/40">
-          <p className="font-medium text-violet-900 dark:text-violet-100">{t("preview.label")}</p>
-          <a href={previewUrl} target="_blank" rel="noreferrer noopener" className="mt-1 block break-all text-violet-700 hover:underline dark:text-violet-300">
-            {previewUrl} ↗
-          </a>
-          <p className="mt-1 text-violet-700 dark:text-violet-300">{t("preview.hint")}</p>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-violet-900 dark:text-violet-100">{t("preview.label")}</p>
+              <a
+                href={previewUrl}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="mt-1 block break-all text-violet-700 hover:underline dark:text-violet-300"
+              >
+                {previewUrl} ↗
+              </a>
+              <p className="mt-1 text-violet-700 dark:text-violet-300">{t("preview.hint")}</p>
+            </div>
+            <button
+              type="button"
+              onClick={runPreview}
+              disabled={previewing || !values.query.trim()}
+              className="shrink-0 rounded-md border border-violet-400 bg-white px-3 py-1.5 text-xs font-medium text-violet-800 transition hover:bg-violet-50 disabled:opacity-50 dark:border-violet-700 dark:bg-neutral-900 dark:text-violet-200 dark:hover:bg-neutral-800"
+            >
+              {previewing ? `${t("preview.fetching")}` : `🔎 ${t("preview.fetch")}`}
+            </button>
+          </div>
+
+          {previewError ? (
+            <p className="mt-2 text-rose-700 dark:text-rose-400">⚠ {previewError}</p>
+          ) : null}
+
+          {previewItems !== null ? (
+            <div className="mt-3 border-t border-violet-200 pt-3 dark:border-violet-900">
+              <p className="mb-2 font-medium text-violet-900 dark:text-violet-100">
+                {t("preview.foundCount", { count: previewCount ?? 0 })}
+              </p>
+              {previewItems.length === 0 ? (
+                <p className="text-violet-700 dark:text-violet-300">{t("preview.noItems")}</p>
+              ) : (
+                <ul className="space-y-2">
+                  {previewItems.map((item, i) => (
+                    <li
+                      key={i}
+                      className="rounded border border-violet-200 bg-white p-2 dark:border-violet-900 dark:bg-neutral-900"
+                    >
+                      <div className="flex flex-wrap items-baseline gap-2 text-[11px] text-neutral-500">
+                        {item.publisher ? (
+                          <span className="font-medium text-violet-700 dark:text-violet-300">
+                            {item.publisher}
+                          </span>
+                        ) : null}
+                        {item.publisherUrl ? (
+                          <span className="font-mono text-neutral-500">
+                            {new URL(item.publisherUrl).hostname.replace(/^www\./, "")}
+                          </span>
+                        ) : null}
+                        {item.publishedAt ? (
+                          <span>· {new Date(item.publishedAt).toLocaleString()}</span>
+                        ) : null}
+                      </div>
+                      <p className="mt-0.5 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noreferrer noopener nofollow"
+                          className="hover:underline"
+                        >
+                          {item.title || item.link} ↗
+                        </a>
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </form>

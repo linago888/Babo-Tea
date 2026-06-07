@@ -591,7 +591,11 @@
         },
         "preview": {
           "label": "Google News RSS URL preview",
-          "hint": "Click to open; this is the exact feed URL the ingest job hits."
+          "hint": "Click to open; this is the exact feed URL the ingest job hits.",
+          "fetch": "Preview results",
+          "fetching": "Fetching…",
+          "foundCount": "Found {count} articles (showing first 30)",
+          "noItems": "Google News returned no results — try loosening the query, or remove the country restriction."
         }
       }
     },

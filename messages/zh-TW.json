@@ -591,7 +591,11 @@
         },
         "preview": {
           "label": "預覽 Google News RSS URL",
-          "hint": "點開可預覽 Google 會回給我們的 feed 內容；ingest 會抓這個 URL。"
+          "hint": "點開可預覽 Google 會回給我們的 feed 內容；ingest 會抓這個 URL。",
+          "fetch": "預覽結果",
+          "fetching": "抓取中…",
+          "foundCount": "找到 {count} 篇新聞（顯示前 30 篇）",
+          "noItems": "Google News 沒回任何結果 — 試試把 query 放寬鬆一點，或拿掉 country 限制。"
         }
       }
     },

@@ -573,7 +573,14 @@
           "countryCode": "国（ISO Alpha-2）", "countryCodeHint": "任意；国を限定",
           "enabled": "有効（OFF で一時停止）"
         },
-        "preview": { "label": "Google News RSS URL プレビュー", "hint": "ingest はこの URL を取得します。" }
+        "preview": {
+          "label": "Google News RSS URL プレビュー",
+          "hint": "ingest はこの URL を取得します。",
+          "fetch": "結果をプレビュー",
+          "fetching": "取得中…",
+          "foundCount": "{count} 件のニュースを発見（最大 30 件表示）",
+          "noItems": "Google News から結果なし — クエリを緩めるか国指定を外してみてください。"
+        }
       }
     },
     "newsInbox": {
