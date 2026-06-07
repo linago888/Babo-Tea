@@ -182,6 +182,77 @@ export function GoogleNewsCrawlButton() {
 }
 
 /**
+ * 批次翻譯 — 把收件匣裡缺翻譯的 DRAFT 用 AI 補齊 4 個 locale
+ */
+export function TranslateBatchButton({ fillBody = false }: { fillBody?: boolean }) {
+  const t = useTranslations("admin.newsInbox");
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ translated: number; errors: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run() {
+    setBusy(true);
+    setResult(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/news/translate-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 10, fillBody }),
+      });
+      const text = await res.text();
+      let data: unknown = null;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        const snippet = text.slice(0, 200).replace(/<[^>]+>/g, "").trim();
+        setError(`HTTP ${res.status} — ${snippet}`);
+        setBusy(false);
+        return;
+      }
+      const typed = data as
+        | {
+            ok: true;
+            summary: { translated: number; errors: Array<{ message: string }> };
+          }
+        | { ok: false; error?: string };
+      if (!typed.ok) {
+        setError("error" in typed && typed.error ? typed.error : "Translate failed");
+        setBusy(false);
+        return;
+      }
+      setResult({ translated: typed.summary.translated, errors: typed.summary.errors.length });
+      setBusy(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <button
+        type="button"
+        onClick={run}
+        disabled={busy}
+        className="rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-800 disabled:opacity-50 dark:bg-amber-700 dark:hover:bg-amber-600"
+      >
+        {busy ? `✨ ${t("translateRunning")}` : `✨ ${t("translateAll")}`}
+      </button>
+      {result ? (
+        <p className="text-xs text-emerald-700 dark:text-emerald-400">
+          ✓ {t("translated")} {result.translated}
+          {result.errors > 0 ? ` · ${result.errors} ${t("errors")}` : ""}
+        </p>
+      ) : null}
+      {error ? <p className="text-xs text-rose-700 dark:text-rose-400">⚠ {error}</p> : null}
+    </div>
+  );
+}
+
+/**
  * Header 上的「拉取所有來源」按鈕
  */
 export function IngestAllButton() {

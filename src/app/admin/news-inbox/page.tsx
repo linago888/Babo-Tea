@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
-import { GoogleNewsCrawlButton, IngestAllButton, InboxRowActions } from "@/components/admin/news-inbox-actions";
+import { GoogleNewsCrawlButton, IngestAllButton, InboxRowActions, TranslateBatchButton } from "@/components/admin/news-inbox-actions";
 import { getAdminLocale } from "@/lib/admin-i18n";
 import { type Locale, routing } from "@/i18n/routing";
 import { pickI18n } from "@/lib/i18n-text";
@@ -212,12 +212,17 @@ async function renderInbox(searchParamsPromise: Promise<SearchParams>) {
             const titles = collectFilledLocales(n.titleI18n);
             const summaries = collectFilledLocales(n.summaryI18n);
 
-            // 決定 primary locale — 優先用 source.primaryLanguage（爬蟲塞到那個 locale）
+            // 決定 primary locale —— 偏好順序：
+            //   1. zh-TW（後台預設顯示繁體中文）
+            //   2. 使用者目前的 admin locale
+            //   3. source.primaryLanguage（原文語言）
+            //   4. 任一已填的 locale
             const rawLang = n.source?.primaryLanguage ?? locale;
             const supported = routing.locales as readonly string[];
             const primaryLocale: string =
-              titles.find((tt) => tt.locale === rawLang)?.locale ??
+              titles.find((tt) => tt.locale === "zh-TW")?.locale ??
               titles.find((tt) => tt.locale === locale)?.locale ??
+              titles.find((tt) => tt.locale === rawLang)?.locale ??
               titles[0]?.locale ??
               rawLang;
 
@@ -377,6 +382,7 @@ function Header({ t }: { t: (key: string) => string }) {
       <div className="flex flex-wrap items-end gap-2">
         <GoogleNewsCrawlButton />
         <IngestAllButton />
+        <TranslateBatchButton />
       </div>
     </header>
   );
