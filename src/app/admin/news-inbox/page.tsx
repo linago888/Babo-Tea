@@ -18,20 +18,6 @@ function parse(sp: SearchParams, key: string): string | undefined {
   return Array.isArray(v) ? v[0] : v;
 }
 
-/**
- * 把任意 Prisma 例外轉成回退值；同時保留訊息給 UI 顯示警告條
- */
-async function safeQuery<T>(label: string, fn: () => Promise<T>, fallback: T): Promise<{ value: T; error: string | null }> {
-  try {
-    return { value: await fn(), error: null };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    // eslint-disable-next-line no-console
-    console.error(`[news-inbox] ${label} failed:`, msg);
-    return { value: fallback, error: `${label}: ${msg}` };
-  }
-}
-
 type ItemRow = {
   id: string;
   slug: string;
@@ -51,60 +37,100 @@ type ItemRow = {
   };
 };
 
+/**
+ * 主頁 — 把整個邏輯包在 try/catch 裡渲染。
+ * 任何例外都直接把訊息 + stack 寫進頁面，不會被 Next.js production
+ * 遮罩成 "An error occurred in the Server Components render"。
+ */
 export default async function NewsInboxPage({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  try {
+    return await renderInbox(searchParams);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error && err.stack ? err.stack : "";
+    const name = err instanceof Error ? err.name : "Error";
+    // 同時也 log 到 Vercel function logs（從 Vercel dashboard 可以找到）
+    // eslint-disable-next-line no-console
+    console.error("[news-inbox] caught at page boundary:", err);
+    return (
+      <div className="rounded-xl border border-rose-300 bg-rose-50 p-6 dark:border-rose-800 dark:bg-rose-950">
+        <h1 className="text-xl font-bold text-rose-900 dark:text-rose-100">
+          ⚠ 新聞收件匣載入失敗（已捕捉具體錯誤）
+        </h1>
+        <p className="mt-2 text-sm text-rose-700 dark:text-rose-300">
+          <span className="font-mono">{name}</span>
+        </p>
+        <pre className="mt-3 max-h-[500px] overflow-auto whitespace-pre-wrap rounded bg-rose-100 p-3 text-xs text-rose-900 dark:bg-rose-900 dark:text-rose-100">
+          {message}
+        </pre>
+        {stack ? (
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs text-rose-700 dark:text-rose-300">
+              Stack trace
+            </summary>
+            <pre className="mt-2 max-h-[500px] overflow-auto whitespace-pre-wrap rounded bg-rose-100 p-3 text-[10px] text-rose-900 dark:bg-rose-900 dark:text-rose-100">
+              {stack}
+            </pre>
+          </details>
+        ) : null}
+      </div>
+    );
+  }
+}
+
+async function renderInbox(searchParamsPromise: Promise<SearchParams>) {
   const locale = (await getAdminLocale()) as Locale;
   const t = await getTranslations({ locale, namespace: "admin.newsInbox" });
 
-  const sp = await searchParams;
+  const sp = await searchParamsPromise;
   const sourceFilter = parse(sp, "sourceId");
 
   const where: Prisma.NewsWhereInput = { status: "DRAFT" };
   if (sourceFilter) where.sourceId = sourceFilter;
 
-  // 每個 query 獨立隔離 — 任一個失敗也不擋整頁
-  const countResult = await safeQuery("count DRAFT", () => prisma.news.count({ where: { status: "DRAFT" } }), 0);
-  const totalDraft = countResult.value;
+  const totalDraft = await prisma.news.count({ where: { status: "DRAFT" } });
+  const totalArchived = await prisma.news.count({ where: { status: "ARCHIVED" } });
 
-  const archivedResult = await safeQuery(
-    "count ARCHIVED",
-    () => prisma.news.count({ where: { status: "ARCHIVED" } }),
-    0,
-  );
-  const totalArchived = archivedResult.value;
+  if (totalDraft === 0) {
+    return (
+      <>
+        <Header t={t} />
+        <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-10 text-center text-sm dark:border-neutral-700 dark:bg-neutral-900">
+          <p className="text-neutral-700 dark:text-neutral-300">{t("emptyTitle")}</p>
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{t("emptyHint")}</p>
+        </div>
+      </>
+    );
+  }
 
-  const itemsResult = await safeQuery<ItemRow[]>(
-    "findMany news",
-    () =>
-      prisma.news.findMany({
-        where,
-        orderBy: [{ createdAt: "desc" }, { publishedAt: "desc" }],
-        take: 100,
-        select: {
-          id: true,
-          slug: true,
-          titleI18n: true,
-          summaryI18n: true,
-          heroImageUrl: true,
-          sourceUrl: true,
-          publishedAt: true,
-          createdAt: true,
-          completenessScore: true,
-          source: {
-            select: { id: true, slug: true, nameI18n: true, countryCode: true, primaryLanguage: true },
-          },
-        },
-      }) as unknown as Promise<ItemRow[]>,
-    [] as ItemRow[],
-  );
-  const items = itemsResult.value;
+  const items = (await prisma.news.findMany({
+    where,
+    orderBy: [{ createdAt: "desc" }, { publishedAt: "desc" }],
+    take: 100,
+    select: {
+      id: true,
+      slug: true,
+      titleI18n: true,
+      summaryI18n: true,
+      heroImageUrl: true,
+      sourceUrl: true,
+      publishedAt: true,
+      createdAt: true,
+      completenessScore: true,
+      source: {
+        select: { id: true, slug: true, nameI18n: true, countryCode: true, primaryLanguage: true },
+      },
+    },
+  })) as unknown as ItemRow[];
 
-  // 從 items 直接 dedupe sources — 不再跑 source.findMany 的 nested where（Supabase pooler 對 some/_count 不穩定）
+  // 從 items 直接 dedupe sources — 不再跑 source.findMany 的 nested where
   const sourceMap = new Map<string, { id: string; nameI18n: unknown; slug: string; count: number }>();
   for (const n of items) {
+    if (!n.source) continue;
     const existing = sourceMap.get(n.source.id);
     if (existing) {
       existing.count += 1;
@@ -119,37 +145,9 @@ export default async function NewsInboxPage({
   }
   const sources = [...sourceMap.values()].sort((a, b) => a.slug.localeCompare(b.slug));
 
-  const errors = [countResult.error, archivedResult.error, itemsResult.error].filter(
-    (x): x is string => x !== null,
-  );
-
-  // 空收件匣短路
-  if (totalDraft === 0 && errors.length === 0) {
-    return (
-      <>
-        <Header t={t} />
-        <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-10 text-center text-sm dark:border-neutral-700 dark:bg-neutral-900">
-          <p className="text-neutral-700 dark:text-neutral-300">{t("emptyTitle")}</p>
-          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{t("emptyHint")}</p>
-        </div>
-      </>
-    );
-  }
-
   return (
     <>
       <Header t={t} />
-
-      {errors.length > 0 ? (
-        <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs dark:border-amber-800 dark:bg-amber-950">
-          <p className="font-medium text-amber-900 dark:text-amber-100">⚠ 部分查詢失敗（已用回退值繼續渲染）：</p>
-          <ul className="mt-1 list-inside list-disc text-amber-800 dark:text-amber-200">
-            {errors.map((e, i) => (
-              <li key={i} className="font-mono">{e}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
 
       <ul className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Tile label={t("tiles.pending")} value={totalDraft} tone="warn" />
@@ -193,8 +191,7 @@ export default async function NewsInboxPage({
       ) : (
         <ul className="flex flex-col gap-3">
           {items.map((n) => {
-            // primaryLanguage 可能不在我們支援的 locales 之中（e.g. 'en-US'）— normalize
-            const rawLang = n.source.primaryLanguage;
+            const rawLang = n.source?.primaryLanguage ?? locale;
             const supported = routing.locales as readonly string[];
             const lc = (supported.includes(rawLang) ? rawLang : locale) as Locale;
             const title =
@@ -203,7 +200,9 @@ export default async function NewsInboxPage({
             const excerpt =
               pickI18n(n.summaryI18n, lc, { fallback: "" }) ||
               pickI18n(n.summaryI18n, locale, { fallback: "" });
-            const sourceName = pickI18n(n.source.nameI18n, locale, { fallback: n.source.slug });
+            const sourceName = n.source
+              ? pickI18n(n.source.nameI18n, locale, { fallback: n.source.slug })
+              : "(no source)";
 
             return (
               <li
@@ -226,7 +225,7 @@ export default async function NewsInboxPage({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-2 text-[11px] text-neutral-500 dark:text-neutral-400">
                     <span className="font-medium text-neutral-700 dark:text-neutral-300">{sourceName}</span>
-                    {n.source.countryCode ? <span>{n.source.countryCode}</span> : null}
+                    {n.source?.countryCode ? <span>{n.source.countryCode}</span> : null}
                     <span className="font-mono">{rawLang}</span>
                     <span>·</span>
                     <span>{t("crawled")}: {formatDate(n.createdAt, locale, { dateStyle: "short" })}</span>
