@@ -191,10 +191,12 @@ async function callBatchExecute(
   articleId: string,
 ): Promise<string | null> {
   const ts = Math.floor(Date.now() / 1000);
+  // 內層陣列共 18 個元素 — 對照 SSujitX/google-news-url-decoder 的格式。
+  // 之前少了一個 null（共 17 個），導致 Google 回 error code 3（INVALID_ARGUMENT）。
   const innerArr = [
     "garturlreq",
     [
-      ["X", "X", ["X", "X"], null, null, 1, 1, "US:en", null, 1, null, null, null, null, null, 0, 1],
+      ["X", "X", ["X", "X"], null, null, null, 1, 1, "US:en", null, 1, null, null, null, null, null, 0, 1],
       "X",
       "X",
       1,
