@@ -182,6 +182,103 @@ export function GoogleNewsCrawlButton() {
 }
 
 /**
+ * 跑全套 — 手動觸發跟 Vercel Cron 一樣的 daily 排程
+ * Google News + RSS + AI 翻譯 一次到位
+ */
+export function RunDailyCronButton() {
+  const t = useTranslations("admin.newsInbox");
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{
+    google: { created: number; sourcesAuto: number };
+    rss: { created: number };
+    translate: { translated: number };
+    durationMs: number;
+    stageErrors: number;
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run() {
+    if (!confirm(t("runDailyConfirm"))) return;
+    setBusy(true);
+    setResult(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/news/cron-daily", { method: "POST" });
+      const text = await res.text();
+      let data: unknown = null;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        const snippet = text.slice(0, 200).replace(/<[^>]+>/g, "").trim();
+        setError(`HTTP ${res.status} — ${snippet}`);
+        setBusy(false);
+        return;
+      }
+      const typed = data as
+        | {
+            ok: true;
+            summary: {
+              googleNews: { created: number; sourcesAutoCreated: number };
+              rss: { created: number };
+              translate: { translated: number };
+              durationMs: number;
+              stageErrors: Array<unknown>;
+            };
+          }
+        | { ok: false; error?: string };
+      if (!typed.ok) {
+        setError("error" in typed && typed.error ? typed.error : "Daily cron failed");
+        setBusy(false);
+        return;
+      }
+      setResult({
+        google: {
+          created: typed.summary.googleNews.created,
+          sourcesAuto: typed.summary.googleNews.sourcesAutoCreated,
+        },
+        rss: { created: typed.summary.rss.created },
+        translate: { translated: typed.summary.translate.translated },
+        durationMs: typed.summary.durationMs,
+        stageErrors: typed.summary.stageErrors.length,
+      });
+      setBusy(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <button
+        type="button"
+        onClick={run}
+        disabled={busy}
+        title={t("runDailyHint")}
+        className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+      >
+        {busy ? `🚀 ${t("runDailyRunning")}` : `🚀 ${t("runDaily")}`}
+      </button>
+      {result ? (
+        <div className="max-w-[320px] text-right text-[11px] leading-snug text-emerald-700 dark:text-emerald-400">
+          <p>
+            ✓ Google +{result.google.created} ({result.google.sourcesAuto} 自動 source) ·
+            RSS +{result.rss.created} · {t("translated")} {result.translate.translated}
+          </p>
+          <p className="text-neutral-500 dark:text-neutral-500">
+            {(result.durationMs / 1000).toFixed(1)}s
+            {result.stageErrors > 0 ? ` · ⚠ ${result.stageErrors} stage errors` : ""}
+          </p>
+        </div>
+      ) : null}
+      {error ? <p className="max-w-[320px] text-right text-xs text-rose-700 dark:text-rose-400">⚠ {error}</p> : null}
+    </div>
+  );
+}
+
+/**
  * 批次翻譯 — 把收件匣裡缺翻譯的 DRAFT 用 AI 補齊 4 個 locale
  */
 export function TranslateBatchButton({ fillBody = false }: { fillBody?: boolean }) {

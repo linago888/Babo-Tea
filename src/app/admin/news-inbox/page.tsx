@@ -1,7 +1,13 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
-import { GoogleNewsCrawlButton, IngestAllButton, InboxRowActions, TranslateBatchButton } from "@/components/admin/news-inbox-actions";
+import {
+  GoogleNewsCrawlButton,
+  IngestAllButton,
+  InboxRowActions,
+  RunDailyCronButton,
+  TranslateBatchButton,
+} from "@/components/admin/news-inbox-actions";
 import { getAdminLocale } from "@/lib/admin-i18n";
 import { type Locale, routing } from "@/i18n/routing";
 import { pickI18n } from "@/lib/i18n-text";
@@ -380,6 +386,7 @@ function Header({ t }: { t: (key: string) => string }) {
         <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{t("subtitle")}</p>
       </div>
       <div className="flex flex-wrap items-end gap-2">
+        <RunDailyCronButton />
         <GoogleNewsCrawlButton />
         <IngestAllButton />
         <TranslateBatchButton />
