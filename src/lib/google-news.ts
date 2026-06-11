@@ -12,6 +12,7 @@
  *
  * 不需 API key，免費；查詢結果是 RSS XML（每個 item 帶 <source url> 標出原 publisher）。
  */
+import { GoogleDecoder } from "google-news-url-decoder";
 
 export interface GoogleNewsParams {
   query: string;
@@ -149,138 +150,16 @@ function safeUrl(value: string, base?: string): string | null {
 }
 
 /**
- * 從 Google News URL 路徑抽出 article ID（CBMi... 那段 base64url token）。
- * 這個 ID 是 batchexecute 呼叫需要的參數。
- */
-function extractArticleIdFromUrl(googleNewsUrl: string): string | null {
-  try {
-    const u = new URL(googleNewsUrl);
-    const segments = u.pathname.split("/").filter(Boolean);
-    const last = segments[segments.length - 1];
-    if (!last || !/^[A-Za-z0-9_-]+$/.test(last)) return null;
-    if (last.length < 20) return null; // 太短不像合法 article id
-    return last;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * 從 Google News intermediate page HTML 抽出 batchexecute 用的三個關鍵屬性：
- *   data-n-a-sg = signature
- *   data-n-a-ts = timestamp（**這個必須從 HTML 抓，不能用 Date.now()**；
- *                 Google 會用 article 自身的時間戳驗證請求）
- *   data-n-a-id = article id（== URL path 的 base64 segment）
- *
- * 三個少一個都不能呼叫 batchexecute。
- */
-function extractBatchParams(html: string): {
-  signature: string;
-  timestamp: string;
-  articleId: string;
-} | null {
-  const sig = html.match(/data-n-a-sg=["']([^"']+)["']/);
-  const ts = html.match(/data-n-a-ts=["']([^"']+)["']/);
-  const id = html.match(/data-n-a-id=["']([^"']+)["']/);
-  if (!sig || !ts || !id) return null;
-  return { signature: sig[1], timestamp: ts[1], articleId: id[1] };
-}
-
-/**
- * 呼叫 Google News 內部 batchexecute RPC，把 article id + signature 換成真實 URL。
- *
- * Endpoint: https://news.google.com/_/DotsSplashUi/data/batchexecute
- * RPC ID: Fbv4je
- * 輸入：garturlreq payload，順序是 config, articleId, timestamp, signature
- * 回應：)]}'\n + JSON 陣列，第一個 https URL 通常就是真實 publisher URL
- *
- * 兩個關鍵點（都會造成 error code 3 INVALID_ARGUMENT）：
- *   1. timestamp 必須是 article 自身的（data-n-a-ts），不能用 Date.now()
- *   2. 參數順序是 articleId → timestamp → signature
- *      （之前寫成 signature → articleId → timestamp，整個錯位）
- *   3. config 內層陣列開頭是 3 個 null（null,null,null）不是 2 個
- *
- * 對照 SSujitX/google-news-url-decoder 的 Python 實作。
- * 這是現代 Google News URL（CBMi 開頭）唯一可靠的解碼方式。
- */
-async function callBatchExecute(
-  signature: string,
-  timestamp: string,
-  articleId: string,
-): Promise<string | null> {
-  const innerArr = [
-    "garturlreq",
-    [
-      ["X", "X", ["X", "X"], null, null, null, 1, 1, "US:en", null, 1, null, null, null, null, null, 0, 1],
-      "X",
-      "X",
-      1,
-      [1, 1, 1],
-      1,
-      1,
-      null,
-      0,
-      0,
-      null,
-      0,
-    ],
-    articleId,
-    Number(timestamp),
-    signature,
-  ];
-  const fReq = JSON.stringify([[["Fbv4je", JSON.stringify(innerArr), null, "generic"]]]);
-  const body = `f.req=${encodeURIComponent(fReq)}`;
-
-  const reqId = Math.floor(100000 + Math.random() * 900000);
-  const url =
-    "https://news.google.com/_/DotsSplashUi/data/batchexecute" +
-    `?rpcids=Fbv4je&source-path=%2F&f.sid=-1&bl=boq_dotssplashuiserver&hl=en-US&gl=US&soc-app=139&soc-platform=1&soc-device=1&_reqid=${reqId}&rt=c`;
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "User-Agent": BROWSER_UA,
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-        Accept: "*/*",
-        "Accept-Language": "en-US,en;q=0.5",
-        Origin: "https://news.google.com",
-        Referer: "https://news.google.com/",
-      },
-      body,
-      signal: controller.signal,
-    });
-    if (!res.ok) return null;
-    const text = await res.text();
-    // 回應前綴是 )]}'\n 然後是 JSON-like 陣列；裡面的真實 URL 用引號跳脫
-    // 直接 regex 抓第一個非 google 的 https URL
-    const candidates = text.match(/"(https?:[^"\\]+)"/g);
-    if (!candidates) return null;
-    for (const raw of candidates) {
-      const url = raw.slice(1, -1).replace(/\\u003d/g, "=").replace(/\\u0026/g, "&");
-      try {
-        const u = new URL(url);
-        if (!isGoogleHost(u.hostname)) return url;
-      } catch { /* noop */ }
-    }
-    return null;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-/**
  * 解碼失敗時的降級方案：實際 fetch Google News URL，從回傳 HTML 抓真實文章 URL。
  *
- * 流程：
- *   1. fetch intermediate page（真實瀏覽器 UA）
- *   2. 若 server-side redirect 已經帶我們離開 google.com → 直接回傳
- *   3. 從 HTML 抽 data-n-a-sg + data-n-a-id → 呼叫 batchexecute RPC
- *   4. batchexecute 失敗 → fallback 用 HTML scrape（meta refresh / JS redirect / data 屬性）
+ * 注意：現代 Google News URL（CBMi 開頭）的 batchexecute 解碼交給
+ *      google-news-url-decoder 套件處理（見 resolveGoogleNewsArticleUrl）。
+ *      這個 function 只做最後的 HTML scrape 嘗試：
+ *        1. server-side redirect 帶我們離開 google.com
+ *        2. <link rel="canonical"> / <meta og:url>
+ *        3. meta refresh / window.location / <a data-n-au>
+ *      實務上這幾條對新格式很少命中（canonical/og:url 多半還是 google），
+ *      但對舊格式或某些 article 類型偶爾有用，保留當保險。
  */
 async function resolveViaHttp(googleNewsUrl: string): Promise<string | null> {
   const controller = new AbortController();
@@ -304,20 +183,7 @@ async function resolveViaHttp(googleNewsUrl: string): Promise<string | null> {
 
     const html = (await res.text()).slice(0, 300_000);
 
-    // 2. 主路：batchexecute RPC（現代 Google News URL 唯一可靠方式）
-    const batchParams = extractBatchParams(html);
-    if (batchParams) {
-      const articleId = extractArticleIdFromUrl(googleNewsUrl) ?? batchParams.articleId;
-      const decoded = await callBatchExecute(
-        batchParams.signature,
-        batchParams.timestamp,
-        articleId,
-      );
-      if (decoded) return decoded;
-    }
-
-    // 3. fallback：HTML scrape
-    // 3a. <link rel="canonical" href="..."> 或 <meta property="og:url" content="...">
+    // 2. <link rel="canonical" href="..."> 或 <meta property="og:url" content="...">
     const canonical = html.match(
       /<link[^>]*rel=["']canonical["'][^>]*href=["'](https?:\/\/[^"']+)["']/i,
     );
@@ -333,7 +199,7 @@ async function resolveViaHttp(googleNewsUrl: string): Promise<string | null> {
       if (u && !isGoogleHost(new URL(u).hostname)) return u;
     }
 
-    // 3b. meta refresh
+    // 3. meta refresh
     const meta = html.match(
       /<meta[^>]*http-equiv=["']?refresh["']?[^>]*content=["']?[^"';]*?url=([^"';\s]+)/i,
     );
@@ -342,7 +208,7 @@ async function resolveViaHttp(googleNewsUrl: string): Promise<string | null> {
       if (u && !isGoogleHost(new URL(u).hostname)) return u;
     }
 
-    // 3c. JS window.location redirect
+    // 4. JS window.location redirect
     const winLoc = html.match(
       /window\.location(?:\.href|\.replace\(|\.assign\(|\s*=\s*)["']([^"']+)["']/,
     );
@@ -351,7 +217,7 @@ async function resolveViaHttp(googleNewsUrl: string): Promise<string | null> {
       if (u && !isGoogleHost(new URL(u).hostname)) return u;
     }
 
-    // 3d. <a href data-n-au>（兩種順序）
+    // 5. <a href data-n-au>（兩種順序）
     const linkA = html.match(/<a\s+[^>]*?href=["'](https?:\/\/[^"']+)["'][^>]*?data-n-au/i);
     if (linkA) {
       const u = safeUrl(linkA[1]);
@@ -373,16 +239,33 @@ async function resolveViaHttp(googleNewsUrl: string): Promise<string | null> {
 
 /**
  * 解析 Google News URL → 真實 publisher 文章 URL。
- * 1. 先試 base64 path 解碼（舊格式 /news/url?url= 還在用）
- * 2. 失敗就走 HTTP intermediate page → batchexecute RPC（新格式 CBMi...）
- * 3. batchexecute 也敗 → HTML scrape fallback
+ *
+ * 1. base64 path 解碼（舊格式 /news/url?url= 還在用）
+ * 2. google-news-url-decoder 套件 — 抓 data-n-a-sg/ts + 呼叫 batchexecute RPC
+ *    （現代 CBMi 格式唯一可靠方式；套件持續維護追蹤 Google 格式變化）
+ * 3. HTML scrape fallback（canonical / og:url / redirect）
  * 4. 全失敗回 null
  */
 export async function resolveGoogleNewsArticleUrl(
   googleNewsUrl: string,
 ): Promise<string | null> {
+  // 1. 舊格式快速路徑
   const decoded = decodeGoogleNewsUrl(googleNewsUrl);
   if (decoded) return decoded;
+
+  // 2. 套件：batchexecute 解碼新格式
+  try {
+    const decoder = new GoogleDecoder();
+    const result = await decoder.decode(googleNewsUrl);
+    if (result.status && result.decoded_url) {
+      const u = safeUrl(result.decoded_url);
+      if (u && !isGoogleHost(new URL(u).hostname)) return u;
+    }
+  } catch {
+    /* 套件失敗 → 落到 HTML scrape */
+  }
+
+  // 3. HTML scrape fallback
   return resolveViaHttp(googleNewsUrl);
 }
 

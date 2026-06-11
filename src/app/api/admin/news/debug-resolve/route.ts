@@ -11,6 +11,8 @@
  *
  * 純診斷用途；不寫 DB。
  */
+import { GoogleDecoder } from "google-news-url-decoder";
+
 import { isAdminAuthorized } from "@/lib/admin-auth-check";
 import { decodeGoogleNewsUrl } from "@/lib/google-news";
 import { crawlUrl } from "@/lib/news-crawler";
@@ -124,57 +126,29 @@ export async function POST(req: Request) {
   };
   result.steps.push({ name: "html-markers", markers });
 
-  // Step 4: 如果有 sg + ts + id，嘗試 batchexecute
-  if (markers["data-n-a-sg"] && markers["data-n-a-ts"] && markers["data-n-a-id"] && !result.resolvedUrl) {
+  // Step 4: 用 google-news-url-decoder 套件解碼（與 production 同一條路）
+  if (!result.resolvedUrl) {
     try {
-      const sig = markers["data-n-a-sg"];
-      const articleId = markers["data-n-a-id"];
-      const ts = Number(markers["data-n-a-ts"]);
-      const innerArr = [
-        "garturlreq",
-        [
-          ["X","X",["X","X"],null,null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],
-          "X","X",1,[1,1,1],1,1,null,0,0,null,0,
-        ],
-        articleId, ts, sig,
-      ];
-      const fReq = JSON.stringify([[["Fbv4je", JSON.stringify(innerArr), null, "generic"]]]);
-      const reqId = Math.floor(100000 + Math.random() * 900000);
-      const beUrl =
-        "https://news.google.com/_/DotsSplashUi/data/batchexecute" +
-        `?rpcids=Fbv4je&source-path=%2F&f.sid=-1&bl=boq_dotssplashuiserver&hl=en-US&gl=US&soc-app=139&soc-platform=1&soc-device=1&_reqid=${reqId}&rt=c`;
-      const beRes = await fetch(beUrl, {
-        method: "POST",
-        headers: {
-          "User-Agent": BROWSER_UA,
-          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-          Accept: "*/*",
-          Origin: "https://news.google.com",
-          Referer: "https://news.google.com/",
-        },
-        body: `f.req=${encodeURIComponent(fReq)}`,
-      });
-      const beText = await beRes.text();
-      // 抓第一個非 google https URL
-      const urlMatches = beText.match(/"(https?:[^"\\]+)"/g) ?? [];
-      const decoded = urlMatches.map((s) => s.slice(1, -1)).filter((u) => {
-        try { return !isGoogleHost(new URL(u).hostname); } catch { return false; }
-      });
+      const decoder = new GoogleDecoder();
+      const dec = await decoder.decode(url);
       result.steps.push({
-        name: "batchexecute",
-        success: beRes.ok && decoded.length > 0,
-        status: beRes.status,
-        responseLength: beText.length,
-        responseSample: beText.slice(0, 800),
-        decodedCandidates: decoded.slice(0, 5),
+        name: "package-decode",
+        success: dec.status === true,
+        result: dec.status ? dec.decoded_url : null,
+        message: dec.status ? undefined : dec.message,
       });
-      if (decoded[0] && !result.resolvedUrl) {
-        result.resolvedUrl = decoded[0];
-        result.resolvedBy = "batchexecute";
+      if (dec.status && dec.decoded_url) {
+        try {
+          const u = new URL(dec.decoded_url);
+          if (!isGoogleHost(u.hostname)) {
+            result.resolvedUrl = dec.decoded_url;
+            result.resolvedBy = "package-decode";
+          }
+        } catch { /* noop */ }
       }
     } catch (err) {
       result.steps.push({
-        name: "batchexecute",
+        name: "package-decode",
         success: false,
         error: err instanceof Error ? err.message : String(err),
       });

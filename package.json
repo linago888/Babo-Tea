@@ -29,6 +29,7 @@
     "@prisma/client": "^7.8.0",
     "@vercel/blob": "^2.4.0",
     "ai": "^6.0.191",
+    "google-news-url-decoder": "^1.2.1",
     "graphql": "^16.14.0",
     "next": "16.2.6",
     "next-intl": "^4.12.0",
