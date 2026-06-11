@@ -130,57 +130,110 @@ export function decodeGoogleNewsUrl(rawUrl: string): string | null {
   }
 }
 
+/** 真實瀏覽器 UA — Google 對 bot UA 會回不同（簡化）的中介頁，較難 parse */
+const BROWSER_UA =
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+function isGoogleHost(hostname: string): boolean {
+  return /(?:^|\.)google\.com$/i.test(hostname) || /(?:^|\.)goo\.gl$/i.test(hostname);
+}
+
+function safeUrl(value: string, base?: string): string | null {
+  try {
+    const u = base ? new URL(value, base) : new URL(value);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
 /**
  * 解碼失敗時的降級方案：實際 fetch Google News URL，從回傳 HTML 抓真實文章 URL。
  *
- * Google News 新格式（CBMixwF...）的 base64 payload 不再直接含 URL，
- * 而是一串內部 token；它的真實 URL 要靠 Google 自己的 JS 解碼。但 Google
- * 的中介頁通常含有：
- *   - server-side 302 → 直接 redirect 到 publisher（fetch redirect:follow 自動處理）
- *   - <meta http-equiv="refresh" content="0;url=...">
- *   - <a href="..." data-n-au="..."> 元素
+ * 6 個 fallback 通道，從最可靠到最弱依序：
+ *   1. fetch redirect:follow 後落腳的 URL 不在 google.com → 那就是
+ *   2. <meta http-equiv="refresh" content="0;url=...">
+ *   3. window.location.href = "..." 等 JS redirect
+ *   4. <a href="..." data-n-au="..."> 或反向順序
+ *   5. AF_initDataCallback / data-link / data-href 等 Google 常用 attr
+ *   6. HTML 內任何最長的非 google.com URL（最後手段）
  *
- * 抓 5 秒 timeout，只看前 50KB HTML。
+ * 用真實瀏覽器 UA + 完整 Accept header，繞過 Google 的 bot 偵測。
  */
-async function resolveViaHttp(googleNewsUrl: string, userAgent: string): Promise<string | null> {
+async function resolveViaHttp(googleNewsUrl: string): Promise<string | null> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
+  const timeout = setTimeout(() => controller.abort(), 8000);
   try {
     const res = await fetch(googleNewsUrl, {
       headers: {
-        "User-Agent": userAgent,
-        Accept: "text/html,application/xhtml+xml,*/*;q=0.5",
+        "User-Agent": BROWSER_UA,
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
       },
       redirect: "follow",
       signal: controller.signal,
     });
     if (!res.ok) return null;
 
-    // 若 redirect:follow 已經帶我們離開 google.com，那就是真實文章
+    // 1. server-side redirect 帶我們離開 google
     try {
-      const finalHost = new URL(res.url).hostname;
-      if (!/google\.com$/i.test(finalHost)) return res.url;
+      if (!isGoogleHost(new URL(res.url).hostname)) return res.url;
     } catch { /* noop */ }
 
-    const html = (await res.text()).slice(0, 50_000);
+    const html = (await res.text()).slice(0, 200_000);
 
-    // Meta refresh
+    // 2. meta refresh
     const meta = html.match(
-      /<meta\s+[^>]*http-equiv=["']refresh["'][^>]*content=["'][^"']*?url=([^"']+)/i,
+      /<meta[^>]*http-equiv=["']?refresh["']?[^>]*content=["']?[^"';]*?url=([^"';\s]+)/i,
     );
     if (meta) {
-      const u = meta[1];
-      if (!/(?:^|\.)google\.com/i.test(new URL(u, res.url).hostname)) {
-        return new URL(u, res.url).toString();
-      }
+      const u = safeUrl(meta[1], res.url);
+      if (u && !isGoogleHost(new URL(u).hostname)) return u;
     }
 
-    // <a data-n-au="..." href="https://...">
-    const link = html.match(
-      /<a\s+[^>]*?href=["'](https?:\/\/[^"']+)["'][^>]*?data-n-au=/i,
+    // 3. JS window.location redirect
+    const winLoc = html.match(
+      /window\.location(?:\.href|\.replace\(|\.assign\(|\s*=\s*)["']([^"']+)["']/,
     );
-    if (link && !/(?:^|\.)google\.com/i.test(new URL(link[1]).hostname)) {
-      return link[1];
+    if (winLoc) {
+      const u = safeUrl(winLoc[1], res.url);
+      if (u && !isGoogleHost(new URL(u).hostname)) return u;
+    }
+
+    // 4. <a href="..." data-n-au=...>（兩個順序）
+    const linkA = html.match(/<a\s+[^>]*?href=["'](https?:\/\/[^"']+)["'][^>]*?data-n-au/i);
+    if (linkA) {
+      const u = safeUrl(linkA[1]);
+      if (u && !isGoogleHost(new URL(u).hostname)) return u;
+    }
+    const linkB = html.match(/<a\s+[^>]*?data-n-au[^>]*?href=["'](https?:\/\/[^"']+)["']/i);
+    if (linkB) {
+      const u = safeUrl(linkB[1]);
+      if (u && !isGoogleHost(new URL(u).hostname)) return u;
+    }
+
+    // 5. Google 內部 data 屬性
+    const dataLink = html.match(
+      /(?:data-href|data-link|data-url|data-redirect)=["'](https?:\/\/[^"']+)["']/i,
+    );
+    if (dataLink) {
+      const u = safeUrl(dataLink[1]);
+      if (u && !isGoogleHost(new URL(u).hostname)) return u;
+    }
+
+    // 6. 最後手段：HTML 裡所有非 google 的 URL，挑最長的當文章 URL
+    const allUrls = html.match(/https?:\/\/[^\s"'<>]+/g);
+    if (allUrls) {
+      const nonGoogle = allUrls
+        .map((u) => safeUrl(u))
+        .filter((u): u is string => u !== null)
+        .filter((u) => !isGoogleHost(new URL(u).hostname))
+        .filter((u) => /\.(com|org|net|jp|tw|cn|hk|asia|news|io|co)/.test(u))
+        // 排掉 css / js / 圖片 / 字型
+        .filter((u) => !/\.(css|js|png|jpg|jpeg|gif|webp|svg|woff|woff2|ttf|ico)(\?|$)/i.test(u))
+        .sort((a, b) => b.length - a.length);
+      if (nonGoogle.length > 0) return nonGoogle[0];
     }
 
     return null;
@@ -194,16 +247,15 @@ async function resolveViaHttp(googleNewsUrl: string, userAgent: string): Promise
 /**
  * 解析 Google News URL → 真實 publisher 文章 URL。
  * 1. 先試 base64 path 解碼（舊格式）
- * 2. 失敗就 HTTP fetch + parse HTML（新格式）
- * 3. 全部失敗回 null（呼叫端要降級用 RSS 提供的資訊，不要爬 Google News 自己）
+ * 2. 失敗就 HTTP fetch + parse HTML（新格式 / 各種 fallback）
+ * 3. 全部失敗回 null
  */
 export async function resolveGoogleNewsArticleUrl(
   googleNewsUrl: string,
-  userAgent = "GlobalBobaGraphBot/1.0 (+https://babo-tea.vercel.app)",
 ): Promise<string | null> {
   const decoded = decodeGoogleNewsUrl(googleNewsUrl);
   if (decoded) return decoded;
-  return resolveViaHttp(googleNewsUrl, userAgent);
+  return resolveViaHttp(googleNewsUrl);
 }
 
 /**

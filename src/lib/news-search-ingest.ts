@@ -207,8 +207,9 @@ async function processItem(
   let summaryText = "";
   let bodyMd = "";
   let heroImageUrl: string | null = null;
-  // 預設 sourceUrl = 解析後的 publisher URL（若有）；否則 publisherUrl（網域層級）；最後才是 Google News URL
-  let finalUrl = articleUrl ?? item.publisherUrl ?? item.link;
+  // sourceUrl 優先順序：解析後的真實文章 URL > Google News URL（瀏覽器點下去會 redirect）
+  // 不再 fallback 到 publisher domain root — 那個對使用者沒意義
+  let finalUrl = articleUrl ?? item.link;
 
   if (articleUrl) {
     // 解析成功 → 爬真實文章
@@ -224,7 +225,7 @@ async function processItem(
       summaryText = "";
     }
   }
-  // else: 解析失敗，故意不去 fetch Google News URL（避免抓到 "Google News" 頁面）
+  // else: 解析失敗 → sourceUrl 用 Google News URL 保留可點擊性，body 留空編輯手動補
 
   if (!titleText) titleText = item.publisherName ?? "Untitled";
 
