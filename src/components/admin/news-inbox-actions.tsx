@@ -499,6 +499,85 @@ export function TranslateBatchButton({ fillBody = false }: { fillBody?: boolean 
 }
 
 /**
+ * 🐛 Debug — 對單一 Google News URL 跑完整 resolve trace
+ * 把每個 fallback 的結果秀出來，讓開發者知道哪一步失敗
+ */
+export function DebugResolveButton() {
+  const [open, setOpen] = useState(false);
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<unknown>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run() {
+    if (!url.trim()) return;
+    setBusy(true);
+    setResult(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/news/debug-resolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url.trim() }),
+      });
+      const text = await res.text();
+      let data: unknown = null;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        setError(`HTTP ${res.status} — ${text.slice(0, 200)}`);
+        setBusy(false);
+        return;
+      }
+      setResult(data);
+      setBusy(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:items-end">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-xs text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+      >
+        🐛 偵錯 Google News 解析
+      </button>
+      {open ? (
+        <div className="w-full rounded-lg border border-neutral-200 bg-white p-3 sm:w-[420px] dark:border-neutral-800 dark:bg-neutral-900">
+          <input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="貼一個 https://news.google.com/rss/articles/CBMi... URL"
+            className="w-full rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-xs focus:border-neutral-900 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800"
+          />
+          <button
+            type="button"
+            onClick={run}
+            disabled={busy || !url.trim()}
+            className="mt-2 w-full rounded-md bg-neutral-900 px-2 py-1.5 text-xs font-medium text-white transition hover:bg-neutral-800 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+          >
+            {busy ? "解析中…" : "跑 resolve trace"}
+          </button>
+          {error ? (
+            <p className="mt-2 text-xs text-rose-700 dark:text-rose-400">⚠ {error}</p>
+          ) : null}
+          {result !== null ? (
+            <pre className="mt-2 max-h-[400px] overflow-auto rounded bg-neutral-50 p-2 text-[10px] leading-tight dark:bg-neutral-800">
+              {JSON.stringify(result, null, 2)}
+            </pre>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
  * Header 上的「拉取所有來源」按鈕
  */
 export function IngestAllButton() {

@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
 import {
+  DebugResolveButton,
   GoogleNewsCrawlButton,
   IngestAllButton,
   InboxRowActions,
@@ -441,6 +442,7 @@ function Header({ t }: { t: (key: string) => string }) {
         <GoogleNewsCrawlButton />
         <IngestAllButton />
         <TranslateBatchButton />
+        <DebugResolveButton />
       </div>
     </header>
   );
