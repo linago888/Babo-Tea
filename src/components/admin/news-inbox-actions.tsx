@@ -181,67 +181,130 @@ export function GoogleNewsCrawlButton() {
   );
 }
 
+type StageName = "google" | "rss" | "translate";
+
+interface StageState {
+  active: boolean;
+  done: number;
+  total: number;
+  totalCreated: number;
+  currentLabel?: string;
+  status: "pending" | "running" | "done" | "skipped" | "error";
+}
+
 /**
  * 跑全套 — 手動觸發跟 Vercel Cron 一樣的 daily 排程
- * Google News + RSS + AI 翻譯 一次到位
+ * 用串流 NDJSON 拿即時進度（per query / per source / per item）
  */
 export function RunDailyCronButton() {
   const t = useTranslations("admin.newsInbox");
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<{
-    google: { created: number; sourcesAuto: number };
-    rss: { created: number };
-    translate: { translated: number };
-    durationMs: number;
-    stageErrors: number;
-  } | null>(null);
+  const [stages, setStages] = useState<Record<StageName, StageState>>({
+    google: { active: false, done: 0, total: 0, totalCreated: 0, status: "pending" },
+    rss: { active: false, done: 0, total: 0, totalCreated: 0, status: "pending" },
+    translate: { active: false, done: 0, total: 0, totalCreated: 0, status: "pending" },
+  });
+  const [durationMs, setDurationMs] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  function applyEvent(ev: Record<string, unknown>) {
+    const stage = ev.stage as StageName | "complete" | "error";
+    if (stage === "complete") {
+      setDurationMs((ev.durationMs as number) ?? null);
+      return;
+    }
+    if (stage === "error") {
+      setError(String(ev.error ?? "Unknown error"));
+      return;
+    }
+    if (!["google", "rss", "translate"].includes(stage)) return;
+    const stageName = stage as StageName;
+    const status = ev.status as string;
+
+    setStages((prev) => {
+      const next = { ...prev };
+      const cur = { ...next[stageName] };
+      if (status === "start") {
+        cur.active = true;
+        cur.status = "running";
+        cur.total = (ev.total as number) ?? 0;
+        cur.done = 0;
+      } else if (status === "progress") {
+        cur.active = true;
+        cur.status = "running";
+        cur.total = (ev.total as number) ?? cur.total;
+        cur.done = (ev.done as number) ?? cur.done;
+        cur.totalCreated = (ev.totalCreated as number) ?? cur.totalCreated;
+        const label = (ev.query ?? ev.source) as string | undefined;
+        if (label) cur.currentLabel = label;
+      } else if (status === "done") {
+        cur.active = false;
+        cur.status = "done";
+        cur.done = cur.total > 0 ? cur.total : cur.done;
+        if (typeof ev.created === "number") cur.totalCreated = ev.created;
+        if (typeof ev.translated === "number") cur.totalCreated = ev.translated;
+      } else if (status === "skip" || status === "skip-rest") {
+        cur.active = false;
+        cur.status = "skipped";
+      } else if (status === "error" || status === "query-error" || status === "source-error") {
+        if (status === "error") {
+          cur.active = false;
+          cur.status = "error";
+        }
+      }
+      next[stageName] = cur;
+      return next;
+    });
+  }
 
   async function run() {
     if (!confirm(t("runDailyConfirm"))) return;
     setBusy(true);
-    setResult(null);
     setError(null);
+    setDurationMs(null);
+    setStages({
+      google: { active: false, done: 0, total: 0, totalCreated: 0, status: "pending" },
+      rss: { active: false, done: 0, total: 0, totalCreated: 0, status: "pending" },
+      translate: { active: false, done: 0, total: 0, totalCreated: 0, status: "pending" },
+    });
+
     try {
-      const res = await fetch("/api/admin/news/cron-daily", { method: "POST" });
-      const text = await res.text();
-      let data: unknown = null;
-      try {
-        data = JSON.parse(text);
-      } catch {
+      const res = await fetch("/api/admin/news/cron-daily?stream=true", { method: "POST" });
+      if (!res.body) {
+        setError("No response body — streaming not supported");
+        setBusy(false);
+        return;
+      }
+      if (!res.ok && res.status !== 200) {
+        const text = await res.text();
         const snippet = text.slice(0, 200).replace(/<[^>]+>/g, "").trim();
         setError(`HTTP ${res.status} — ${snippet}`);
         setBusy(false);
         return;
       }
-      const typed = data as
-        | {
-            ok: true;
-            summary: {
-              googleNews: { created: number; sourcesAutoCreated: number };
-              rss: { created: number };
-              translate: { translated: number };
-              durationMs: number;
-              stageErrors: Array<unknown>;
-            };
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          try {
+            const ev = JSON.parse(trimmed) as Record<string, unknown>;
+            applyEvent(ev);
+          } catch {
+            /* skip malformed line */
           }
-        | { ok: false; error?: string };
-      if (!typed.ok) {
-        setError("error" in typed && typed.error ? typed.error : "Daily cron failed");
-        setBusy(false);
-        return;
+        }
       }
-      setResult({
-        google: {
-          created: typed.summary.googleNews.created,
-          sourcesAuto: typed.summary.googleNews.sourcesAutoCreated,
-        },
-        rss: { created: typed.summary.rss.created },
-        translate: { translated: typed.summary.translate.translated },
-        durationMs: typed.summary.durationMs,
-        stageErrors: typed.summary.stageErrors.length,
-      });
+
       setBusy(false);
       router.refresh();
     } catch (err) {
@@ -250,8 +313,10 @@ export function RunDailyCronButton() {
     }
   }
 
+  const hasResult = stages.google.status !== "pending" || stages.rss.status !== "pending" || stages.translate.status !== "pending";
+
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:items-end">
       <button
         type="button"
         onClick={run}
@@ -261,19 +326,103 @@ export function RunDailyCronButton() {
       >
         {busy ? `🚀 ${t("runDailyRunning")}` : `🚀 ${t("runDaily")}`}
       </button>
-      {result ? (
-        <div className="max-w-[320px] text-right text-[11px] leading-snug text-emerald-700 dark:text-emerald-400">
-          <p>
-            ✓ Google +{result.google.created} ({result.google.sourcesAuto} 自動 source) ·
-            RSS +{result.rss.created} · {t("translated")} {result.translate.translated}
-          </p>
-          <p className="text-neutral-500 dark:text-neutral-500">
-            {(result.durationMs / 1000).toFixed(1)}s
-            {result.stageErrors > 0 ? ` · ⚠ ${result.stageErrors} stage errors` : ""}
-          </p>
+
+      {(busy || hasResult) ? (
+        <div className="space-y-1.5 rounded-lg border border-neutral-200 bg-white p-3 text-xs dark:border-neutral-800 dark:bg-neutral-900 sm:w-[340px]">
+          <StageBar
+            name="google"
+            label={t("stageGoogle")}
+            state={stages.google}
+            color="violet"
+          />
+          <StageBar name="rss" label={t("stageRss")} state={stages.rss} color="emerald" />
+          <StageBar
+            name="translate"
+            label={t("stageTranslate")}
+            state={stages.translate}
+            color="amber"
+          />
+          {durationMs !== null ? (
+            <p className="pt-1 text-right text-[11px] text-neutral-500 dark:text-neutral-400">
+              ✓ {(durationMs / 1000).toFixed(1)}s
+            </p>
+          ) : null}
         </div>
       ) : null}
-      {error ? <p className="max-w-[320px] text-right text-xs text-rose-700 dark:text-rose-400">⚠ {error}</p> : null}
+
+      {error ? (
+        <p className="max-w-[340px] text-right text-xs text-rose-700 dark:text-rose-400">⚠ {error}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function StageBar({
+  name,
+  label,
+  state,
+  color,
+}: {
+  name: StageName;
+  label: string;
+  state: StageState;
+  color: "violet" | "emerald" | "amber";
+}) {
+  const pct =
+    state.status === "done"
+      ? 100
+      : state.total > 0
+        ? Math.min(100, Math.round((state.done / state.total) * 100))
+        : state.status === "running"
+          ? 5
+          : 0;
+
+  const barColor = {
+    violet: "bg-violet-500",
+    emerald: "bg-emerald-500",
+    amber: "bg-amber-500",
+  }[color];
+  const labelColor = {
+    violet: "text-violet-700 dark:text-violet-300",
+    emerald: "text-emerald-700 dark:text-emerald-300",
+    amber: "text-amber-700 dark:text-amber-300",
+  }[color];
+
+  const statusIcon = {
+    pending: "○",
+    running: "●",
+    done: "✓",
+    skipped: "↷",
+    error: "✗",
+  }[state.status];
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className={`text-[11px] font-medium ${labelColor}`}>
+          {statusIcon} {label}
+        </span>
+        <span className="text-[10px] font-mono tabular-nums text-neutral-500 dark:text-neutral-400">
+          {state.status === "done"
+            ? `+${state.totalCreated}`
+            : state.total > 0
+              ? `${state.done}/${state.total}`
+              : state.status === "skipped"
+                ? "skipped"
+                : ""}
+        </span>
+      </div>
+      <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+        <div
+          className={`h-full ${barColor} transition-[width] duration-300 ease-out ${state.status === "running" ? "opacity-90" : ""}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      {state.currentLabel && state.status === "running" ? (
+        <p className="mt-0.5 truncate text-[10px] text-neutral-500 dark:text-neutral-400">
+          {state.currentLabel}
+        </p>
+      ) : null}
     </div>
   );
 }

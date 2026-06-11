@@ -1,45 +1,37 @@
 /**
  * GET / POST /api/admin/news/cron-daily
  *
- * 每天定時跑：
- *   1. Google News 搜尋爬取（ingestAllEnabledQueries）
- *   2. RSS 來源拉取（ingestAllSources）
- *   3. AI 批次翻譯成 4 個 locale（translate-batch 直接呼叫，不走 HTTP）
+ * 每天定時跑 + 也接後台手動觸發。
  *
- * 結果都進 DRAFT，編輯到 /admin/news-inbox 審稿後發布。
+ * 兩種輸出模式：
+ *   - 預設（cron / curl）：等所有 stage 跑完，回單一 JSON
+ *   - ?stream=true：邊跑邊串 NDJSON 進度事件 — 給後台 UI 進度條用
  *
  * 認證：
- *   - Vercel Cron 來的請求帶 header `Authorization: Bearer <CRON_SECRET>`
- *   - 如果沒設 CRON_SECRET，也接受 admin Basic Auth（給 manual trigger 用）
- *
- * vercel.json 內 cron 設定：
- *   {
- *     "crons": [{ "path": "/api/admin/news/cron-daily", "schedule": "0 8 * * *" }]
- *   }
- *   時間是 UTC；08:00 UTC = 台北 16:00 / 東京 17:00。
- *
- * 容錯：
- *   - 任一階段失敗都不擋下一階段
- *   - 結果摘要回 JSON，可由 logs / 監控 / Vercel cron history 看
+ *   - Bearer <CRON_SECRET>（給 Vercel Cron）
+ *   - admin Basic Auth（給 admin 手動觸發）
  */
-import { isAdminAuthorized } from "@/lib/admin-auth-check";
 import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
 
+import { isAdminAuthorized } from "@/lib/admin-auth-check";
 import { routing } from "@/i18n/routing";
 import { scoreNews } from "@/lib/content-quality/completeness";
-import { ingestAllSources } from "@/lib/rss-ingest";
-import { ingestAllEnabledQueries } from "@/lib/news-search-ingest";
+import { ingestSource } from "@/lib/rss-ingest";
+import { ingestSearchQuery } from "@/lib/news-search-ingest";
 import { prisma } from "@/lib/prisma";
 
 export const maxDuration = 60;
 
+const GLOBAL_BUDGET_MS = 55_000;
+const GOOGLE_BUDGET_MS = 40_000;
+const RSS_BUDGET_MS = 50_000;
+
 function isCronAuthorized(req: Request): boolean {
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) return false;
-  const header = req.headers.get("authorization") ?? "";
-  return header === `Bearer ${cronSecret}`;
+  return (req.headers.get("authorization") ?? "") === `Bearer ${cronSecret}`;
 }
 
 type LocaleMap = Record<string, string>;
@@ -60,11 +52,22 @@ function pickFirstFilled(field: unknown): { locale: string; value: string } | nu
   return null;
 }
 
-/** 內部直呼，不走 HTTP — 避免 cold-start + auth 兩次 */
-async function runTranslateBatch(limit: number): Promise<{ translated: number; errors: number }> {
-  if (!process.env.OPENAI_API_KEY) {
-    return { translated: 0, errors: 0 };
-  }
+interface ProgressTotals {
+  googleCreated: number;
+  googleSourcesAuto: number;
+  googleErrors: number;
+  rssCreated: number;
+  rssErrors: number;
+  translated: number;
+  translateErrors: number;
+  stageErrors: Array<{ stage: string; message: string }>;
+}
+
+async function runTranslate(
+  limit: number,
+  emit?: (event: object) => void,
+): Promise<{ translated: number; errors: number }> {
+  if (!process.env.OPENAI_API_KEY) return { translated: 0, errors: 0 };
 
   const candidates = await prisma.news.findMany({
     where: { status: "DRAFT" },
@@ -85,10 +88,13 @@ async function runTranslateBatch(limit: number): Promise<{ translated: number; e
   });
 
   const targets = candidates
-    .filter((n) => (routing.locales as readonly string[]).some((lc) => !hasLocale(n.titleI18n, lc)))
+    .filter((n) =>
+      (routing.locales as readonly string[]).some((lc) => !hasLocale(n.titleI18n, lc)),
+    )
     .slice(0, limit);
-
   if (targets.length === 0) return { translated: 0, errors: 0 };
+
+  emit?.({ stage: "translate", status: "progress", done: 0, total: targets.length });
 
   const localeShape: Record<string, z.ZodString> = {};
   for (const lc of routing.locales as readonly string[]) localeShape[lc] = z.string();
@@ -96,68 +102,241 @@ async function runTranslateBatch(limit: number): Promise<{ translated: number; e
   const draftsSchema = z.object({ titleI18n: localeSchema, summaryI18n: localeSchema });
 
   const systemPrompt = `You translate news for Global Boba Graph.
-For each item produce title (30-80 chars) + summary (40-80 words) in 4 locales (en, zh-TW, zh-CN, ja).
-Locale style: en neutral wire-service, zh-TW Taiwan idiom, zh-CN mainland idiom, ja natural news Japanese.
-Translate faithfully, don't invent.`;
+Title 30-80 chars, summary 40-80 words, in 4 locales (en, zh-TW, zh-CN, ja).
+Locale style: en wire-service neutral, zh-TW Taiwan idiom, zh-CN mainland idiom, ja natural news Japanese.
+Translate faithfully; don't invent.`;
 
   let translated = 0;
   let errors = 0;
+  let doneCount = 0;
+
+  const tasks = targets.map(async (n) => {
+    const sourceTitle = pickFirstFilled(n.titleI18n);
+    const sourceSummary = pickFirstFilled(n.summaryI18n);
+    if (!sourceTitle) throw new Error("No source title");
+
+    const userPrompt = `TITLE (${sourceTitle.locale}): ${sourceTitle.value}\n\nSUMMARY: ${sourceSummary?.value ?? "(none)"}\n\nGenerate translations for all 4 locales.`;
+
+    const { object } = await generateObject({
+      model: openai("gpt-4o-mini"),
+      schema: draftsSchema,
+      system: systemPrompt,
+      prompt: userPrompt,
+      temperature: 0.4,
+    });
+
+    const newTitle: LocaleMap = {
+      ...(n.titleI18n as LocaleMap),
+      ...(object.titleI18n as LocaleMap),
+    };
+    const newSummary: LocaleMap = {
+      ...(n.summaryI18n as LocaleMap),
+      ...(object.summaryI18n as LocaleMap),
+    };
+
+    const { score } = scoreNews({
+      titleI18n: newTitle,
+      summaryI18n: newSummary,
+      bodyI18n: (n.bodyI18n as LocaleMap | null) ?? {},
+      seoI18n: null,
+      heroImageUrl: n.heroImageUrl,
+      editorTags: n.editorTags,
+      sourceUrl: n.sourceUrl,
+      newsBrands: n.newsBrands,
+      newsCities: n.newsCities,
+      newsDrinks: n.newsDrinks,
+    });
+
+    await prisma.news.update({
+      where: { id: n.id },
+      data: {
+        titleI18n: newTitle as never,
+        summaryI18n: newSummary as never,
+        completenessScore: score,
+      },
+    });
+  });
 
   const results = await Promise.allSettled(
-    targets.map(async (n) => {
-      const sourceTitle = pickFirstFilled(n.titleI18n);
-      const sourceSummary = pickFirstFilled(n.summaryI18n);
-      if (!sourceTitle) throw new Error("No source title");
-
-      const userPrompt = `TITLE (${sourceTitle.locale}): ${sourceTitle.value}\n\nSUMMARY: ${sourceSummary?.value ?? "(none)"}\n\nSOURCE: ${n.sourceUrl}\n\nGenerate translations for all 4 locales.`;
-
-      const { object } = await generateObject({
-        model: openai("gpt-4o-mini"),
-        schema: draftsSchema,
-        system: systemPrompt,
-        prompt: userPrompt,
-        temperature: 0.4,
-      });
-
-      const newTitle: LocaleMap = {
-        ...(n.titleI18n as LocaleMap),
-        ...(object.titleI18n as LocaleMap),
-      };
-      const newSummary: LocaleMap = {
-        ...(n.summaryI18n as LocaleMap),
-        ...(object.summaryI18n as LocaleMap),
-      };
-
-      const { score } = scoreNews({
-        titleI18n: newTitle,
-        summaryI18n: newSummary,
-        bodyI18n: (n.bodyI18n as LocaleMap | null) ?? {},
-        seoI18n: null,
-        heroImageUrl: n.heroImageUrl,
-        editorTags: n.editorTags,
-        sourceUrl: n.sourceUrl,
-        newsBrands: n.newsBrands,
-        newsCities: n.newsCities,
-        newsDrinks: n.newsDrinks,
-      });
-
-      await prisma.news.update({
-        where: { id: n.id },
-        data: {
-          titleI18n: newTitle as never,
-          summaryI18n: newSummary as never,
-          completenessScore: score,
-        },
-      });
-      return n.id;
+    tasks.map(async (p) => {
+      await p;
+      doneCount += 1;
+      emit?.({ stage: "translate", status: "progress", done: doneCount, total: targets.length });
     }),
   );
-
   for (const r of results) {
     if (r.status === "fulfilled") translated += 1;
     else errors += 1;
   }
   return { translated, errors };
+}
+
+async function runPipeline(emit: (event: object) => void): Promise<ProgressTotals> {
+  const startMs = Date.now();
+  const totals: ProgressTotals = {
+    googleCreated: 0,
+    googleSourcesAuto: 0,
+    googleErrors: 0,
+    rssCreated: 0,
+    rssErrors: 0,
+    translated: 0,
+    translateErrors: 0,
+    stageErrors: [],
+  };
+
+  // ── Stage 1: Google News ───────────────────────────────
+  try {
+    const queries = await prisma.newsSearchQuery.findMany({
+      where: { enabled: true },
+      select: { id: true, label: true },
+    });
+    emit({ stage: "google", status: "start", total: queries.length });
+
+    for (let i = 0; i < queries.length; i++) {
+      if (Date.now() - startMs > GOOGLE_BUDGET_MS) {
+        emit({
+          stage: "google",
+          status: "skip-rest",
+          done: i,
+          total: queries.length,
+          reason: "time budget",
+        });
+        break;
+      }
+      try {
+        const s = await ingestSearchQuery(queries[i].id, { startedAt: startMs });
+        totals.googleCreated += s.created;
+        totals.googleSourcesAuto += s.sourcesAutoCreated;
+        totals.googleErrors += s.errors.length;
+        emit({
+          stage: "google",
+          status: "progress",
+          done: i + 1,
+          total: queries.length,
+          query: queries[i].label,
+          created: s.created,
+          skipped: s.skipped,
+          totalCreated: totals.googleCreated,
+        });
+      } catch (err) {
+        totals.googleErrors += 1;
+        emit({
+          stage: "google",
+          status: "query-error",
+          query: queries[i].label,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+    emit({
+      stage: "google",
+      status: "done",
+      created: totals.googleCreated,
+      sourcesAutoCreated: totals.googleSourcesAuto,
+      errors: totals.googleErrors,
+    });
+  } catch (err) {
+    totals.stageErrors.push({
+      stage: "google",
+      message: err instanceof Error ? err.message : String(err),
+    });
+    emit({
+      stage: "google",
+      status: "error",
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  // ── Stage 2: RSS ───────────────────────────────────────
+  if (Date.now() - startMs < RSS_BUDGET_MS) {
+    try {
+      const sources = await prisma.source.findMany({
+        where: { rssFeedUrl: { not: null }, status: { not: "ARCHIVED" } },
+        select: { id: true, slug: true },
+      });
+      emit({ stage: "rss", status: "start", total: sources.length });
+
+      for (let i = 0; i < sources.length; i++) {
+        if (Date.now() - startMs > RSS_BUDGET_MS) {
+          emit({
+            stage: "rss",
+            status: "skip-rest",
+            done: i,
+            total: sources.length,
+            reason: "time budget",
+          });
+          break;
+        }
+        try {
+          const s = await ingestSource(sources[i].id);
+          totals.rssCreated += s.created;
+          totals.rssErrors += s.errors.length;
+          emit({
+            stage: "rss",
+            status: "progress",
+            done: i + 1,
+            total: sources.length,
+            source: sources[i].slug,
+            created: s.created,
+            skipped: s.skipped,
+            totalCreated: totals.rssCreated,
+          });
+        } catch (err) {
+          totals.rssErrors += 1;
+          emit({
+            stage: "rss",
+            status: "source-error",
+            source: sources[i].slug,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+      emit({ stage: "rss", status: "done", created: totals.rssCreated, errors: totals.rssErrors });
+    } catch (err) {
+      totals.stageErrors.push({
+        stage: "rss",
+        message: err instanceof Error ? err.message : String(err),
+      });
+      emit({
+        stage: "rss",
+        status: "error",
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  } else {
+    emit({ stage: "rss", status: "skip", reason: "time budget" });
+  }
+
+  // ── Stage 3: Translate ─────────────────────────────────
+  if (Date.now() - startMs < GLOBAL_BUDGET_MS) {
+    try {
+      emit({ stage: "translate", status: "start" });
+      const r = await runTranslate(5, emit);
+      totals.translated = r.translated;
+      totals.translateErrors = r.errors;
+      emit({
+        stage: "translate",
+        status: "done",
+        translated: r.translated,
+        errors: r.errors,
+      });
+    } catch (err) {
+      totals.stageErrors.push({
+        stage: "translate",
+        message: err instanceof Error ? err.message : String(err),
+      });
+      emit({
+        stage: "translate",
+        status: "error",
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  } else {
+    emit({ stage: "translate", status: "skip", reason: "time budget" });
+  }
+
+  emit({ stage: "complete", durationMs: Date.now() - startMs, totals });
+  return totals;
 }
 
 async function handle(req: Request) {
@@ -166,87 +345,54 @@ async function handle(req: Request) {
     return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const startedAt = new Date();
-  const startMs = Date.now();
-  // eslint-disable-next-line no-console
-  console.log("[cron-daily] start", startedAt.toISOString());
+  const url = new URL(req.url);
+  const streaming = url.searchParams.get("stream") === "true";
 
-  const summary = {
-    startedAt: startedAt.toISOString(),
-    triggeredBy: isCron ? "vercel-cron" : "admin",
-    googleNews: {
-      ran: false,
-      queries: 0,
-      created: 0,
-      skipped: 0,
-      sourcesAutoCreated: 0,
-      errors: 0,
-    },
-    rss: { ran: false, sources: 0, created: 0, skipped: 0, errors: 0 },
-    translate: { ran: false, translated: 0, errors: 0 },
-    durationMs: 0,
-    stageErrors: [] as Array<{ stage: string; message: string }>,
-  };
-
-  // 1. Google News 搜尋爬取
-  try {
-    const googleSummaries = await ingestAllEnabledQueries();
-    summary.googleNews = {
-      ran: true,
-      queries: googleSummaries.length,
-      created: googleSummaries.reduce((s, x) => s + x.created, 0),
-      skipped: googleSummaries.reduce((s, x) => s + x.skipped, 0),
-      sourcesAutoCreated: googleSummaries.reduce((s, x) => s + x.sourcesAutoCreated, 0),
-      errors: googleSummaries.reduce((s, x) => s + x.errors.length, 0),
-    };
-  } catch (err) {
-    summary.stageErrors.push({
-      stage: "googleNews",
-      message: err instanceof Error ? err.message : String(err),
+  if (streaming) {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        const emit = (event: object) => {
+          try {
+            controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
+          } catch {
+            /* client disconnected */
+          }
+        };
+        try {
+          await runPipeline(emit);
+        } catch (err) {
+          emit({ stage: "error", error: err instanceof Error ? err.message : String(err) });
+        }
+        controller.close();
+      },
+    });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Cache-Control": "no-cache",
+        "X-Accel-Buffering": "no",
+      },
     });
   }
 
-  // 2. RSS 來源拉取（如果有設）— 預算用得差不多就跳過
-  if (Date.now() - startMs < 40_000) {
-    try {
-      const rssSummaries = await ingestAllSources();
-      summary.rss = {
-        ran: true,
-        sources: rssSummaries.length,
-        created: rssSummaries.reduce((s, x) => s + x.created, 0),
-        skipped: rssSummaries.reduce((s, x) => s + x.skipped, 0),
-        errors: rssSummaries.reduce((s, x) => s + x.errors.length, 0),
-      };
-    } catch (err) {
-      summary.stageErrors.push({
-        stage: "rss",
-        message: err instanceof Error ? err.message : String(err),
-      });
-    }
-  } else {
-    summary.stageErrors.push({ stage: "rss", message: "Skipped: time budget" });
-  }
-
-  // 3. AI 批次翻譯（只當前還有時間時跑；最多 5 篇避免時間用爆）
-  if (Date.now() - startMs < 50_000) {
-    try {
-      const r = await runTranslateBatch(5);
-      summary.translate = { ran: true, translated: r.translated, errors: r.errors };
-    } catch (err) {
-      summary.stageErrors.push({
-        stage: "translate",
-        message: err instanceof Error ? err.message : String(err),
-      });
-    }
-  } else {
-    summary.stageErrors.push({ stage: "translate", message: "Skipped: time budget" });
-  }
-
-  summary.durationMs = Date.now() - startMs;
-  // eslint-disable-next-line no-console
-  console.log("[cron-daily] done", summary);
-
-  return Response.json({ ok: true, summary });
+  // 非串流模式 — 蒐集事件後一次回 JSON（給 Vercel Cron / curl）
+  const events: object[] = [];
+  const totals = await runPipeline((e) => events.push(e));
+  return Response.json({
+    ok: true,
+    summary: {
+      googleNews: {
+        created: totals.googleCreated,
+        sourcesAutoCreated: totals.googleSourcesAuto,
+        errors: totals.googleErrors,
+      },
+      rss: { created: totals.rssCreated, errors: totals.rssErrors },
+      translate: { translated: totals.translated, errors: totals.translateErrors },
+      stageErrors: totals.stageErrors,
+      eventCount: events.length,
+    },
+  });
 }
 
 export async function GET(req: Request) {
