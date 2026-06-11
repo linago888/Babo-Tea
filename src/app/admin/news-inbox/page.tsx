@@ -46,6 +46,7 @@ type ItemRow = {
   slug: string;
   titleI18n: unknown;
   summaryI18n: unknown;
+  bodyI18n: unknown;
   heroImageUrl: string | null;
   sourceUrl: string;
   publishedAt: Date;
@@ -139,6 +140,7 @@ async function renderInbox(searchParamsPromise: Promise<SearchParams>) {
       slug: true,
       titleI18n: true,
       summaryI18n: true,
+      bodyI18n: true,
       heroImageUrl: true,
       sourceUrl: true,
       publishedAt: true,
@@ -214,9 +216,10 @@ async function renderInbox(searchParamsPromise: Promise<SearchParams>) {
       ) : (
         <ul className="flex flex-col gap-3">
           {items.map((n) => {
-            // 蒐集 titleI18n / summaryI18n 裡所有 *已填寫* 的 locale 版本
+            // 蒐集 titleI18n / summaryI18n / bodyI18n 裡所有 *已填寫* 的 locale 版本
             const titles = collectFilledLocales(n.titleI18n);
             const summaries = collectFilledLocales(n.summaryI18n);
+            const bodies = collectFilledLocales(n.bodyI18n);
 
             // 決定 primary locale —— 偏好順序：
             //   1. zh-TW（後台預設顯示繁體中文）
@@ -234,7 +237,16 @@ async function renderInbox(searchParamsPromise: Promise<SearchParams>) {
 
             const primaryTitle = titles.find((tt) => tt.locale === primaryLocale);
             const primarySummary = summaries.find((tt) => tt.locale === primaryLocale);
+            const primaryBody = bodies.find((tt) => tt.locale === primaryLocale) ?? bodies[0];
             const otherTitles = titles.filter((tt) => tt.locale !== primaryLocale);
+            // body 預覽：取第一段、最多 300 字元
+            const bodyPreview = primaryBody?.value
+              ? primaryBody.value
+                  .replace(/[#*_`>]/g, "")
+                  .trim()
+                  .slice(0, 300)
+              : "";
+            const bodyCharCount = primaryBody?.value?.length ?? 0;
 
             const sourceName = n.source
               ? pickI18n(n.source.nameI18n, locale, { fallback: n.source.slug })
@@ -313,6 +325,21 @@ async function renderInbox(searchParamsPromise: Promise<SearchParams>) {
                       {primarySummary.value}
                     </p>
                   ) : null}
+
+                  {/* Body 預覽 + 字數狀態 — 讓編輯一眼看出有沒有爬到內文 */}
+                  {bodyPreview ? (
+                    <div className="mt-2 rounded-md border border-emerald-200 bg-emerald-50/60 p-2 text-xs leading-relaxed text-neutral-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-neutral-300">
+                      <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                        <span>✓ {t("bodyPreview")}</span>
+                        <span className="font-mono tabular-nums">{bodyCharCount.toLocaleString()} {t("chars")}</span>
+                      </div>
+                      <p className="line-clamp-3 whitespace-pre-line">{bodyPreview}{primaryBody && primaryBody.value.length > 300 ? "..." : ""}</p>
+                    </div>
+                  ) : (
+                    <div className="mt-2 rounded-md border border-amber-200 bg-amber-50/60 p-2 text-[11px] text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-400">
+                      ⚠ {t("bodyEmpty")}
+                    </div>
+                  )}
 
                   {/* 其他 locale 的標題（若有） */}
                   {otherTitles.length > 0 ? (
