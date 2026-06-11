@@ -57,6 +57,80 @@ export function buildGoogleNewsRssUrl({ query, locale, countryCode }: GoogleNews
 }
 
 /**
+ * 解碼 Google News 的 obfuscated article URL，拿出真實的 publisher 文章網址。
+ *
+ * 兩種已知格式：
+ *   舊：https://news.google.com/news/url?url=<encoded-real-url>
+ *   新：https://news.google.com/rss/articles/CBMi<base64url>...?oc=5
+ *
+ * 新格式的 base64url payload 是 protobuf 結構，內含 publisher URL。
+ * 我們不正規 parse protobuf — 直接 decode bytes 後 grep `https?://`。
+ * 已知 prefix bytes：0x08 0x13 0x22 <length> <url>。
+ *
+ * 對其他 host 直接回傳原 URL 不變。
+ *
+ * 回傳：解碼後的真實 publisher 文章 URL；若失敗或不是 Google News URL，
+ *      回 null。
+ */
+export function decodeGoogleNewsUrl(rawUrl: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return null;
+  }
+  if (!/(?:^|\.)news\.google\.com$/.test(parsed.hostname)) return null;
+
+  // 舊格式：/news/url?url=<encoded>
+  if (parsed.pathname.endsWith("/url")) {
+    const inner = parsed.searchParams.get("url");
+    if (inner) {
+      try {
+        const u = new URL(inner);
+        return u.toString();
+      } catch {
+        return null;
+      }
+    }
+  }
+
+  // 新格式：/rss/articles/CBMi... 或 /articles/CBMi...
+  const segments = parsed.pathname.split("/").filter(Boolean);
+  const encoded = segments[segments.length - 1];
+  if (!encoded || !/^[A-Za-z0-9_-]+$/.test(encoded)) return null;
+
+  try {
+    // base64url（- _ 而非 + /；無 padding）→ base64 with padding
+    const b64 = encoded
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .padEnd(Math.ceil(encoded.length / 4) * 4, "=");
+    const bytes = Buffer.from(b64, "base64");
+
+    // 在 decode 後的 bytes 裡找出 URL：先轉成 latin1 字串再 regex
+    // （UTF-8 也可，但 latin1 一字節一字符比較不會切到多 byte 字元中間）
+    const text = bytes.toString("latin1");
+    const m = text.match(/https?:\/\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%\-]+/);
+    if (!m) return null;
+
+    let url = m[0];
+    // 修掉常見的尾部噪音字元（protobuf 結構偶會接非 URL 字節後混入）
+    url = url.replace(/[<>"`{}|\\^].*$/, "");
+
+    // 驗證可解析
+    try {
+      const u = new URL(url);
+      if (!/^https?:$/.test(u.protocol)) return null;
+      return u.toString();
+    } catch {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Google News 的 item.link 是長串的跳轉 URL（base64 編碼的 redirect）。
  * 真實 publisher URL 在 RSS item 的 <source url="..."></source> 標籤。
  * 這個 helper 從一個 hostname 拆出 base domain（去掉 www.）。

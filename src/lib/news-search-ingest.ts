@@ -19,7 +19,12 @@
  *   - 編輯之後可手動補 credibilityScore / kind / 翻譯
  */
 import { scoreNews } from "@/lib/content-quality/completeness";
-import { buildGoogleNewsRssUrl, normalizeDomain, slugFromDomain } from "@/lib/google-news";
+import {
+  buildGoogleNewsRssUrl,
+  decodeGoogleNewsUrl,
+  normalizeDomain,
+  slugFromDomain,
+} from "@/lib/google-news";
 import { crawlUrl } from "@/lib/news-crawler";
 import { prisma } from "@/lib/prisma";
 import { fetchRssFeed, type RssItem } from "@/lib/rss-parser";
@@ -154,9 +159,19 @@ async function processItem(
     return;
   }
 
-  // dedupe by sourceUrl (= Google News redirect URL — 對同一查詢每篇文章唯一)
+  // 解碼 Google News obfuscated URL 拿真正的 publisher 文章 URL；
+  // 解不出來就用原 item.link（dedupe 還是會生效，但爬文很可能失敗）
+  const decodedUrl = decodeGoogleNewsUrl(item.link);
+  const articleUrl = decodedUrl ?? item.link;
+
+  // dedupe — 同時檢查解碼後 URL 與原 Google News URL，避免重複建
   const existing = await prisma.news.findFirst({
-    where: { sourceUrl: item.link },
+    where: {
+      OR: [
+        { sourceUrl: articleUrl },
+        ...(decodedUrl ? [{ sourceUrl: item.link }] : []),
+      ],
+    },
     select: { id: true },
   });
   if (existing) {
@@ -173,14 +188,14 @@ async function processItem(
   );
   if (autoCreated) summary.sourcesAutoCreated += 1;
 
-  // 嘗試爬內文 — Google News URL 會 redirect 到 publisher 原文
+  // 嘗試爬內文 — 用解碼後的 publisher URL（拿得到完整文章）
   let titleText = cleanGoogleNewsTitle(item.title ?? "", item.publisherName);
   let summaryText = "";
   let bodyMd = "";
   let heroImageUrl: string | null = null;
-  let finalUrl = item.link;
+  let finalUrl = articleUrl;
   try {
-    const crawl = await crawlUrl(item.link);
+    const crawl = await crawlUrl(articleUrl);
     finalUrl = crawl.finalUrl;
     if (crawl.title) titleText = cleanGoogleNewsTitle(crawl.title, item.publisherName);
     summaryText = crawl.description || "";
@@ -227,8 +242,8 @@ async function processItem(
       bodyI18n: bodyI18n as never,
       category: "TREND",
       sourceId,
-      // 故意存 Google News redirect URL（item.link）— 比 finalUrl 對 dedupe 友善
-      sourceUrl: item.link,
+      // 存解碼後的真實 publisher URL — 對外顯示「原文連結」會跳直接的 publisher 文章
+      sourceUrl: finalUrl,
       publishedAt,
       heroImageUrl,
       editorTags: ["google-news-ingest"],
