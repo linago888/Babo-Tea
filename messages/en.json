@@ -647,6 +647,13 @@
         "publish": "Publish",
         "delete": "Delete",
         "deleteConfirm": "Permanently delete this draft? Cannot be undone."
+      },
+      "bulk": {
+        "selectAll": "Select all on page",
+        "deleteSelected": "Delete {count} selected",
+        "deleteSelectedEmpty": "Delete selected",
+        "deletingRunning": "Deleting…",
+        "confirmDelete": "Permanently delete {count} drafts? Cannot be undone."
       }
     },
     "news": {

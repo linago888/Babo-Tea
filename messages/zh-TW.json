@@ -647,6 +647,13 @@
         "publish": "發布",
         "delete": "刪除",
         "deleteConfirm": "確定永久刪除這則草稿？無法復原。"
+      },
+      "bulk": {
+        "selectAll": "全選本頁",
+        "deleteSelected": "刪除 {count} 筆",
+        "deleteSelectedEmpty": "刪除選取",
+        "deletingRunning": "刪除中…",
+        "confirmDelete": "確定永久刪除這 {count} 筆草稿？無法復原。"
       }
     },
     "news": {

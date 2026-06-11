@@ -631,6 +631,13 @@
         "publish": "发布",
         "delete": "删除",
         "deleteConfirm": "确定永久删除这则草稿？无法复原。"
+      },
+      "bulk": {
+        "selectAll": "全选本页",
+        "deleteSelected": "删除 {count} 笔",
+        "deleteSelectedEmpty": "删除选取",
+        "deletingRunning": "删除中…",
+        "confirmDelete": "确定永久删除这 {count} 笔草稿？无法复原。"
       }
     },
     "news": {

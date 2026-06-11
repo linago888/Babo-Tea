@@ -631,6 +631,13 @@
         "publish": "公開",
         "delete": "削除",
         "deleteConfirm": "このドラフトを完全に削除しますか？元に戻せません。"
+      },
+      "bulk": {
+        "selectAll": "ページ内をすべて選択",
+        "deleteSelected": "{count} 件を削除",
+        "deleteSelectedEmpty": "選択を削除",
+        "deletingRunning": "削除中…",
+        "confirmDelete": "{count} 件のドラフトを完全に削除しますか？元に戻せません。"
       }
     },
     "news": {

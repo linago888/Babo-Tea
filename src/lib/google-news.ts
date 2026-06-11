@@ -296,7 +296,23 @@ async function resolveViaHttp(googleNewsUrl: string): Promise<string | null> {
     }
 
     // 3. fallback：HTML scrape
-    // 3a. meta refresh
+    // 3a. <link rel="canonical" href="..."> 或 <meta property="og:url" content="...">
+    const canonical = html.match(
+      /<link[^>]*rel=["']canonical["'][^>]*href=["'](https?:\/\/[^"']+)["']/i,
+    );
+    if (canonical) {
+      const u = safeUrl(canonical[1]);
+      if (u && !isGoogleHost(new URL(u).hostname)) return u;
+    }
+    const ogUrl = html.match(
+      /<meta[^>]*property=["']og:url["'][^>]*content=["'](https?:\/\/[^"']+)["']/i,
+    );
+    if (ogUrl) {
+      const u = safeUrl(ogUrl[1]);
+      if (u && !isGoogleHost(new URL(u).hostname)) return u;
+    }
+
+    // 3b. meta refresh
     const meta = html.match(
       /<meta[^>]*http-equiv=["']?refresh["']?[^>]*content=["']?[^"';]*?url=([^"';\s]+)/i,
     );
@@ -305,7 +321,7 @@ async function resolveViaHttp(googleNewsUrl: string): Promise<string | null> {
       if (u && !isGoogleHost(new URL(u).hostname)) return u;
     }
 
-    // 3b. JS window.location redirect
+    // 3c. JS window.location redirect
     const winLoc = html.match(
       /window\.location(?:\.href|\.replace\(|\.assign\(|\s*=\s*)["']([^"']+)["']/,
     );
@@ -314,7 +330,7 @@ async function resolveViaHttp(googleNewsUrl: string): Promise<string | null> {
       if (u && !isGoogleHost(new URL(u).hostname)) return u;
     }
 
-    // 3c. <a href data-n-au>（兩種順序）
+    // 3d. <a href data-n-au>（兩種順序）
     const linkA = html.match(/<a\s+[^>]*?href=["'](https?:\/\/[^"']+)["'][^>]*?data-n-au/i);
     if (linkA) {
       const u = safeUrl(linkA[1]);

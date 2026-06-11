@@ -8,6 +8,10 @@ import {
   RunDailyCronButton,
   TranslateBatchButton,
 } from "@/components/admin/news-inbox-actions";
+import {
+  InboxRowCheckbox,
+  InboxSelectionProvider,
+} from "@/components/admin/news-inbox-bulk-select";
 import { getAdminLocale } from "@/lib/admin-i18n";
 import { type Locale, routing } from "@/i18n/routing";
 import { pickI18n } from "@/lib/i18n-text";
@@ -214,6 +218,7 @@ async function renderInbox(searchParamsPromise: Promise<SearchParams>) {
           <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{t("emptyHint")}</p>
         </div>
       ) : (
+        <InboxSelectionProvider allIds={items.map((n) => n.id)}>
         <ul className="flex flex-col gap-3">
           {items.map((n) => {
             // 蒐集 titleI18n / summaryI18n / bodyI18n 裡所有 *已填寫* 的 locale 版本
@@ -261,6 +266,7 @@ async function renderInbox(searchParamsPromise: Promise<SearchParams>) {
                 key={n.id}
                 className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4 transition hover:border-neutral-300 sm:flex-row dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700"
               >
+                <InboxRowCheckbox id={n.id} />
                 {n.heroImageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -377,16 +383,33 @@ async function renderInbox(searchParamsPromise: Promise<SearchParams>) {
                     </p>
                   ) : null}
 
-                  {n.sourceUrl ? (
-                    <a
-                      href={n.sourceUrl}
-                      target="_blank"
-                      rel="noreferrer noopener nofollow"
-                      className="mt-2 inline-block max-w-full truncate text-[11px] text-amber-700 hover:underline dark:text-amber-400"
-                    >
-                      ↗ {n.sourceUrl}
-                    </a>
-                  ) : null}
+                  {n.sourceUrl ? (() => {
+                    let host = "";
+                    try { host = new URL(n.sourceUrl).hostname.replace(/^www\./, ""); } catch { /* noop */ }
+                    const isUnresolved = /(?:^|\.)news\.google\.com$/i.test(host) || /(?:^|\.)google\.com$/i.test(host);
+                    return (
+                      <div className="mt-2 flex items-center gap-1.5">
+                        <span
+                          className={`shrink-0 rounded px-1 text-[9px] font-mono ${
+                            isUnresolved
+                              ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200"
+                              : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+                          }`}
+                          title={isUnresolved ? "Google News URL — couldn't resolve to publisher" : `Resolved → ${host}`}
+                        >
+                          {isUnresolved ? `⚠ ${host || "google.com"}` : `✓ ${host}`}
+                        </span>
+                        <a
+                          href={n.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer noopener nofollow"
+                          className="min-w-0 truncate text-[11px] text-amber-700 hover:underline dark:text-amber-400"
+                        >
+                          ↗ {n.sourceUrl}
+                        </a>
+                      </div>
+                    );
+                  })() : null}
                 </div>
 
                 <div className="sm:ml-auto sm:shrink-0">
@@ -396,6 +419,7 @@ async function renderInbox(searchParamsPromise: Promise<SearchParams>) {
             );
           })}
         </ul>
+        </InboxSelectionProvider>
       )}
 
       {items.length >= 100 ? (
