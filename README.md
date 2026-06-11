@@ -70,6 +70,7 @@
 | `ADMIN_PASSWORD` | ✓ | `/admin` HTTP Basic Auth 密碼 |
 | `OPENAI_API_KEY` |  | Phase 5B AI 草稿生成；未設時按鈕跳 503，不影響其他功能 |
 | `BLOB_READ_WRITE_TOKEN` |  | Phase 5B 圖片上傳（Vercel Storage → Create Blob Store 自動注入）；未設時 URL 手填仍可用 |
+| `CRON_SECRET` |  | Phase 5H Vercel Cron 觸發 `/api/admin/news/cron-daily`（自動爬文 + 翻譯）；建議隨機 32+ 字元 |
 
 ## 快速開始
 
