@@ -166,14 +166,24 @@ function extractArticleIdFromUrl(googleNewsUrl: string): string | null {
 }
 
 /**
- * 從 Google News intermediate page HTML 抽出 batchexecute 用的 signature。
- * 屬性名為 data-n-a-sg，配對 data-n-a-id；少了任一邊都不能呼叫 batchexecute。
+ * 從 Google News intermediate page HTML 抽出 batchexecute 用的三個關鍵屬性：
+ *   data-n-a-sg = signature
+ *   data-n-a-ts = timestamp（**這個必須從 HTML 抓，不能用 Date.now()**；
+ *                 Google 會用 article 自身的時間戳驗證請求）
+ *   data-n-a-id = article id（== URL path 的 base64 segment）
+ *
+ * 三個少一個都不能呼叫 batchexecute。
  */
-function extractSignatureFromHtml(html: string): { signature: string; articleId: string } | null {
+function extractBatchParams(html: string): {
+  signature: string;
+  timestamp: string;
+  articleId: string;
+} | null {
   const sig = html.match(/data-n-a-sg=["']([^"']+)["']/);
+  const ts = html.match(/data-n-a-ts=["']([^"']+)["']/);
   const id = html.match(/data-n-a-id=["']([^"']+)["']/);
-  if (!sig || !id) return null;
-  return { signature: sig[1], articleId: id[1] };
+  if (!sig || !ts || !id) return null;
+  return { signature: sig[1], timestamp: ts[1], articleId: id[1] };
 }
 
 /**
@@ -184,19 +194,22 @@ function extractSignatureFromHtml(html: string): { signature: string; articleId:
  * 輸入：[[["Fbv4je","[\"garturlreq\", config, signature, articleId, ts]", null, "generic"]]]
  * 回應：)]}'\n + JSON 陣列，第一個 https URL 通常就是真實 publisher URL
  *
+ * 重要：timestamp 必須是 article 自身的，從 HTML 的 data-n-a-ts 屬性抓；
+ *      用 Date.now() 會被 Google 拒收（回 error code 3 INVALID_ARGUMENT）。
+ *
  * 這是現代 Google News URL（CBMi 開頭）唯一可靠的解碼方式。
  */
 async function callBatchExecute(
   signature: string,
+  timestamp: string,
   articleId: string,
 ): Promise<string | null> {
-  const ts = Math.floor(Date.now() / 1000);
-  // 內層陣列共 18 個元素 — 對照 SSujitX/google-news-url-decoder 的格式。
-  // 之前少了一個 null（共 17 個），導致 Google 回 error code 3（INVALID_ARGUMENT）。
+  // 對照 SSujitX/google-news-url-decoder 的格式 — 內層陣列 17 個元素。
+  // timestamp 是字串（從 HTML attribute 抓），會嵌成 JSON number。
   const innerArr = [
     "garturlreq",
     [
-      ["X", "X", ["X", "X"], null, null, null, 1, 1, "US:en", null, 1, null, null, null, null, null, 0, 1],
+      ["X", "X", ["X", "X"], null, null, 1, 1, "US:en", null, 1, null, null, null, null, null, 0, 1],
       "X",
       "X",
       1,
@@ -211,7 +224,7 @@ async function callBatchExecute(
     ],
     signature,
     articleId,
-    ts,
+    Number(timestamp),
   ];
   const fReq = JSON.stringify([[["Fbv4je", JSON.stringify(innerArr), null, "generic"]]]);
   const body = `f.req=${encodeURIComponent(fReq)}`;
@@ -290,10 +303,14 @@ async function resolveViaHttp(googleNewsUrl: string): Promise<string | null> {
     const html = (await res.text()).slice(0, 300_000);
 
     // 2. 主路：batchexecute RPC（現代 Google News URL 唯一可靠方式）
-    const sigData = extractSignatureFromHtml(html);
-    if (sigData) {
-      const articleId = extractArticleIdFromUrl(googleNewsUrl) ?? sigData.articleId;
-      const decoded = await callBatchExecute(sigData.signature, articleId);
+    const batchParams = extractBatchParams(html);
+    if (batchParams) {
+      const articleId = extractArticleIdFromUrl(googleNewsUrl) ?? batchParams.articleId;
+      const decoded = await callBatchExecute(
+        batchParams.signature,
+        batchParams.timestamp,
+        articleId,
+      );
       if (decoded) return decoded;
     }
 

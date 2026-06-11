@@ -112,6 +112,7 @@ export async function POST(req: Request) {
   // Step 3: 掃 HTML 看有沒有各種已知 marker
   const markers = {
     "data-n-a-sg": /data-n-a-sg=["']([^"']+)["']/.exec(html)?.[1] ?? null,
+    "data-n-a-ts": /data-n-a-ts=["']([^"']+)["']/.exec(html)?.[1] ?? null,
     "data-n-a-id": /data-n-a-id=["']([^"']+)["']/.exec(html)?.[1] ?? null,
     "data-n-au": /data-n-au=["']([^"']*)["']/.exec(html)?.[1] ?? null,
     "canonical-link": /<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i.exec(html)?.[1] ?? null,
@@ -123,16 +124,16 @@ export async function POST(req: Request) {
   };
   result.steps.push({ name: "html-markers", markers });
 
-  // Step 4: 如果有 sg + id，嘗試 batchexecute
-  if (markers["data-n-a-sg"] && markers["data-n-a-id"] && !result.resolvedUrl) {
+  // Step 4: 如果有 sg + ts + id，嘗試 batchexecute
+  if (markers["data-n-a-sg"] && markers["data-n-a-ts"] && markers["data-n-a-id"] && !result.resolvedUrl) {
     try {
       const sig = markers["data-n-a-sg"];
       const articleId = markers["data-n-a-id"];
-      const ts = Math.floor(Date.now() / 1000);
+      const ts = Number(markers["data-n-a-ts"]);
       const innerArr = [
         "garturlreq",
         [
-          ["X","X",["X","X"],null,null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],
+          ["X","X",["X","X"],null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],
           "X","X",1,[1,1,1],1,1,null,0,0,null,0,
         ],
         sig, articleId, ts,
