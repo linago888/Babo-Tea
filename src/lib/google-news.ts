@@ -131,6 +131,82 @@ export function decodeGoogleNewsUrl(rawUrl: string): string | null {
 }
 
 /**
+ * 解碼失敗時的降級方案：實際 fetch Google News URL，從回傳 HTML 抓真實文章 URL。
+ *
+ * Google News 新格式（CBMixwF...）的 base64 payload 不再直接含 URL，
+ * 而是一串內部 token；它的真實 URL 要靠 Google 自己的 JS 解碼。但 Google
+ * 的中介頁通常含有：
+ *   - server-side 302 → 直接 redirect 到 publisher（fetch redirect:follow 自動處理）
+ *   - <meta http-equiv="refresh" content="0;url=...">
+ *   - <a href="..." data-n-au="..."> 元素
+ *
+ * 抓 5 秒 timeout，只看前 50KB HTML。
+ */
+async function resolveViaHttp(googleNewsUrl: string, userAgent: string): Promise<string | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(googleNewsUrl, {
+      headers: {
+        "User-Agent": userAgent,
+        Accept: "text/html,application/xhtml+xml,*/*;q=0.5",
+      },
+      redirect: "follow",
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+
+    // 若 redirect:follow 已經帶我們離開 google.com，那就是真實文章
+    try {
+      const finalHost = new URL(res.url).hostname;
+      if (!/google\.com$/i.test(finalHost)) return res.url;
+    } catch { /* noop */ }
+
+    const html = (await res.text()).slice(0, 50_000);
+
+    // Meta refresh
+    const meta = html.match(
+      /<meta\s+[^>]*http-equiv=["']refresh["'][^>]*content=["'][^"']*?url=([^"']+)/i,
+    );
+    if (meta) {
+      const u = meta[1];
+      if (!/(?:^|\.)google\.com/i.test(new URL(u, res.url).hostname)) {
+        return new URL(u, res.url).toString();
+      }
+    }
+
+    // <a data-n-au="..." href="https://...">
+    const link = html.match(
+      /<a\s+[^>]*?href=["'](https?:\/\/[^"']+)["'][^>]*?data-n-au=/i,
+    );
+    if (link && !/(?:^|\.)google\.com/i.test(new URL(link[1]).hostname)) {
+      return link[1];
+    }
+
+    return null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
+ * 解析 Google News URL → 真實 publisher 文章 URL。
+ * 1. 先試 base64 path 解碼（舊格式）
+ * 2. 失敗就 HTTP fetch + parse HTML（新格式）
+ * 3. 全部失敗回 null（呼叫端要降級用 RSS 提供的資訊，不要爬 Google News 自己）
+ */
+export async function resolveGoogleNewsArticleUrl(
+  googleNewsUrl: string,
+  userAgent = "GlobalBobaGraphBot/1.0 (+https://babo-tea.vercel.app)",
+): Promise<string | null> {
+  const decoded = decodeGoogleNewsUrl(googleNewsUrl);
+  if (decoded) return decoded;
+  return resolveViaHttp(googleNewsUrl, userAgent);
+}
+
+/**
  * Google News 的 item.link 是長串的跳轉 URL（base64 編碼的 redirect）。
  * 真實 publisher URL 在 RSS item 的 <source url="..."></source> 標籤。
  * 這個 helper 從一個 hostname 拆出 base domain（去掉 www.）。

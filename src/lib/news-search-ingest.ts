@@ -21,8 +21,8 @@
 import { scoreNews } from "@/lib/content-quality/completeness";
 import {
   buildGoogleNewsRssUrl,
-  decodeGoogleNewsUrl,
   normalizeDomain,
+  resolveGoogleNewsArticleUrl,
   slugFromDomain,
 } from "@/lib/google-news";
 import { crawlUrl } from "@/lib/news-crawler";
@@ -132,16 +132,34 @@ function bodyTextToMarkdown(text: string): string {
 }
 
 /**
- * Google News title 通常是 "Article title - Publisher Name"。去掉尾巴。
+ * Google News title 常見有兩種尾綴要去掉：
+ *   1. " - Publisher Name"（從 RSS <source> 抽到的 publisher）
+ *   2. " - Google News" / "- Google ニュース" / 各語系變體
+ * 分隔符可能是 - – — | · 任一種。
  */
+const GOOGLE_NEWS_ALIASES = [
+  "Google News",
+  "Google ニュース",
+  "Google 新聞",
+  "Google 新闻",
+  "谷歌新闻",
+];
+
 function cleanGoogleNewsTitle(raw: string, publisherName?: string): string {
   if (!raw) return raw;
   let title = raw.trim();
-  if (publisherName) {
-    const escaped = publisherName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    // 結尾常見格式：" - Publisher Name" / " | Publisher"
-    title = title.replace(new RegExp(`\\s+[-|]\\s+${escaped}\\s*$`, "i"), "");
-  }
+
+  const tryStrip = (name: string) => {
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`\\s+[-–—|·]+\\s*${escaped}\\s*$`, "i");
+    title = title.replace(re, "").trim();
+  };
+
+  // 先去 publisher
+  if (publisherName) tryStrip(publisherName);
+  // 再去 Google News 各語系變體（即使 publisher 設成 Google News 也會被擋下）
+  for (const alias of GOOGLE_NEWS_ALIASES) tryStrip(alias);
+
   return title.trim();
 }
 
@@ -159,19 +177,16 @@ async function processItem(
     return;
   }
 
-  // 解碼 Google News obfuscated URL 拿真正的 publisher 文章 URL；
-  // 解不出來就用原 item.link（dedupe 還是會生效，但爬文很可能失敗）
-  const decodedUrl = decodeGoogleNewsUrl(item.link);
-  const articleUrl = decodedUrl ?? item.link;
+  // 解析 Google News obfuscated URL → 真實 publisher 文章 URL
+  // 1. base64 path 解碼（舊格式）
+  // 2. HTTP fetch + parse HTML（新格式）
+  // 3. 全失敗 → 不爬文（避免抓到 Google News 中介頁拿到 "Google News" 當 title）
+  const articleUrl = await resolveGoogleNewsArticleUrl(item.link);
 
-  // dedupe — 同時檢查解碼後 URL 與原 Google News URL，避免重複建
+  // dedupe — 同時檢查解析後 URL 與原 Google News URL
+  const dedupeUrls = [item.link, ...(articleUrl && articleUrl !== item.link ? [articleUrl] : [])];
   const existing = await prisma.news.findFirst({
-    where: {
-      OR: [
-        { sourceUrl: articleUrl },
-        ...(decodedUrl ? [{ sourceUrl: item.link }] : []),
-      ],
-    },
+    where: { sourceUrl: { in: dedupeUrls } },
     select: { id: true },
   });
   if (existing) {
@@ -188,25 +203,28 @@ async function processItem(
   );
   if (autoCreated) summary.sourcesAutoCreated += 1;
 
-  // 嘗試爬內文 — 用解碼後的 publisher URL（拿得到完整文章）
   let titleText = cleanGoogleNewsTitle(item.title ?? "", item.publisherName);
   let summaryText = "";
   let bodyMd = "";
   let heroImageUrl: string | null = null;
-  let finalUrl = articleUrl;
-  try {
-    const crawl = await crawlUrl(articleUrl);
-    finalUrl = crawl.finalUrl;
-    if (crawl.title) titleText = cleanGoogleNewsTitle(crawl.title, item.publisherName);
-    summaryText = crawl.description || "";
-    bodyMd = bodyTextToMarkdown(crawl.bodyText);
-    heroImageUrl = crawl.imageUrl;
-  } catch (err) {
-    // 爬不到 — 用 RSS 本身的資訊建 stub。不算錯誤，編輯可手動補。
-    summaryText = item.title ?? "";
-    bodyMd = ""; // 留空
-    void err;
+  // 預設 sourceUrl = 解析後的 publisher URL（若有）；否則 publisherUrl（網域層級）；最後才是 Google News URL
+  let finalUrl = articleUrl ?? item.publisherUrl ?? item.link;
+
+  if (articleUrl) {
+    // 解析成功 → 爬真實文章
+    try {
+      const crawl = await crawlUrl(articleUrl);
+      finalUrl = crawl.finalUrl;
+      if (crawl.title) titleText = cleanGoogleNewsTitle(crawl.title, item.publisherName);
+      summaryText = crawl.description || "";
+      bodyMd = bodyTextToMarkdown(crawl.bodyText);
+      heroImageUrl = crawl.imageUrl;
+    } catch {
+      // 爬不到（站方擋 / SPA / timeout）— 用 RSS 的 title 建 stub
+      summaryText = "";
+    }
   }
+  // else: 解析失敗，故意不去 fetch Google News URL（避免抓到 "Google News" 頁面）
 
   if (!titleText) titleText = item.publisherName ?? "Untitled";
 
