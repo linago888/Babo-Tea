@@ -191,12 +191,16 @@ function extractBatchParams(html: string): {
  *
  * Endpoint: https://news.google.com/_/DotsSplashUi/data/batchexecute
  * RPC ID: Fbv4je
- * 輸入：[[["Fbv4je","[\"garturlreq\", config, signature, articleId, ts]", null, "generic"]]]
+ * 輸入：garturlreq payload，順序是 config, articleId, timestamp, signature
  * 回應：)]}'\n + JSON 陣列，第一個 https URL 通常就是真實 publisher URL
  *
- * 重要：timestamp 必須是 article 自身的，從 HTML 的 data-n-a-ts 屬性抓；
- *      用 Date.now() 會被 Google 拒收（回 error code 3 INVALID_ARGUMENT）。
+ * 兩個關鍵點（都會造成 error code 3 INVALID_ARGUMENT）：
+ *   1. timestamp 必須是 article 自身的（data-n-a-ts），不能用 Date.now()
+ *   2. 參數順序是 articleId → timestamp → signature
+ *      （之前寫成 signature → articleId → timestamp，整個錯位）
+ *   3. config 內層陣列開頭是 3 個 null（null,null,null）不是 2 個
  *
+ * 對照 SSujitX/google-news-url-decoder 的 Python 實作。
  * 這是現代 Google News URL（CBMi 開頭）唯一可靠的解碼方式。
  */
 async function callBatchExecute(
@@ -204,12 +208,10 @@ async function callBatchExecute(
   timestamp: string,
   articleId: string,
 ): Promise<string | null> {
-  // 對照 SSujitX/google-news-url-decoder 的格式 — 內層陣列 17 個元素。
-  // timestamp 是字串（從 HTML attribute 抓），會嵌成 JSON number。
   const innerArr = [
     "garturlreq",
     [
-      ["X", "X", ["X", "X"], null, null, 1, 1, "US:en", null, 1, null, null, null, null, null, 0, 1],
+      ["X", "X", ["X", "X"], null, null, null, 1, 1, "US:en", null, 1, null, null, null, null, null, 0, 1],
       "X",
       "X",
       1,
@@ -222,9 +224,9 @@ async function callBatchExecute(
       null,
       0,
     ],
-    signature,
     articleId,
     Number(timestamp),
+    signature,
   ];
   const fReq = JSON.stringify([[["Fbv4je", JSON.stringify(innerArr), null, "generic"]]]);
   const body = `f.req=${encodeURIComponent(fReq)}`;

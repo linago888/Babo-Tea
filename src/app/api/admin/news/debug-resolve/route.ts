@@ -133,10 +133,10 @@ export async function POST(req: Request) {
       const innerArr = [
         "garturlreq",
         [
-          ["X","X",["X","X"],null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],
+          ["X","X",["X","X"],null,null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],
           "X","X",1,[1,1,1],1,1,null,0,0,null,0,
         ],
-        sig, articleId, ts,
+        articleId, ts, sig,
       ];
       const fReq = JSON.stringify([[["Fbv4je", JSON.stringify(innerArr), null, "generic"]]]);
       const reqId = Math.floor(100000 + Math.random() * 900000);
