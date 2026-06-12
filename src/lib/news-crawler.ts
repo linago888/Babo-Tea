@@ -28,7 +28,8 @@ export interface CrawlResult {
   imageUrl: string | null;
   publishedAt: string | null; // ISO if available
   detectedLang: string | null; // BCP-47, e.g. "ja", "zh-TW"
-  bodyText: string; // plain text, max 8000 chars
+  bodyText: string; // 內文（markdown），含內嵌的 ![](圖片) ，max 8000 chars
+  bodyImages: string[]; // 文章內文中的圖片（絕對 URL，已過濾 logo/icon）
   siteName: string | null;
 }
 
@@ -189,15 +190,17 @@ function extractSiteName(html: string): string | null {
   return extractMeta(html, "og:site_name") ?? extractMeta(html, "application-name");
 }
 
-function stripHtmlToText(html: string, maxChars: number): string {
-  // 抓主體（盡量），優先順序：<article>、<main>、<body>
+/** 抓主體（盡量），優先順序：<article>、<main>、<body> */
+function selectArticleRegion(html: string): string {
   const article = html.match(/<article[^>]*>([\s\S]*?)<\/article>/i);
   const main = html.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
   const body = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  const region = article?.[1] ?? main?.[1] ?? body?.[1] ?? html;
+  return article?.[1] ?? main?.[1] ?? body?.[1] ?? html;
+}
 
-  // 移除 script / style / svg / nav / footer / aside
-  const cleaned = region
+/** 移除 script / style / svg / nav / footer / aside / header / form 雜訊 */
+function cleanRegion(region: string): string {
+  return region
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
     .replace(/<svg[\s\S]*?<\/svg>/gi, "")
@@ -206,9 +209,93 @@ function stripHtmlToText(html: string, maxChars: number): string {
     .replace(/<aside[\s\S]*?<\/aside>/gi, "")
     .replace(/<header[\s\S]*?<\/header>/gi, "")
     .replace(/<form[\s\S]*?<\/form>/gi, "");
+}
 
-  // 段落保留換行
-  const text = cleaned
+/**
+ * 圖片 URL 檔名雜訊關鍵字 — logo / icon / 社群分享 / 介面元素等不是文章內容圖。
+ * 注意：廣告比對用 \bads?[-_/] 加 word boundary，否則會誤殺 WordPress
+ *       最常見的內容圖路徑 /wp-content/uploads/（"upl-ads/" 含 "ads/"）。
+ */
+const IMG_NOISE =
+  /(logo|icon|ico_|avatar|sprite|spacer|blank|pixel|1x1|placeholder|loading|emoji|favicon|hamburger|menu|btn|button|badge|share|sns[_-]|gravatar|\bads?[-_/]|banner_)/i;
+
+/**
+ * 圖片 URL 路徑雜訊 — 在 theme / assets / common / static 等樣板目錄下的圖
+ * 幾乎都是站台 UI 素材（社群 icon、按鈕…），不是文章內容圖。
+ * 例：lmaga 的分享 icon 在 /wp-content/themes/lmaga/img/common/ 下。
+ */
+const IMG_PATH_NOISE = /\/(themes?|assets?|common|static|plugins?|skin|_next|sprites?|widgets?)\//i;
+
+/**
+ * 從單一 <img> tag 抽出最合適的圖片來源。
+ * 優先 lazy-load 屬性（data-src 等），其次 src，最後 srcset 取最大張。
+ * 跳過 data: URI（base64 placeholder）。
+ */
+function pickImgSrc(tag: string): string | null {
+  for (const attr of ["data-src", "data-original", "data-lazy-src", "data-lazy", "data-echo", "data-img"]) {
+    const m = tag.match(new RegExp(`\\b${attr}=["']([^"']+)["']`, "i"));
+    if (m && !/^data:/i.test(m[1])) return m[1];
+  }
+  const src = tag.match(/\bsrc=["']([^"']+)["']/i);
+  if (src && !/^data:/i.test(src[1])) return src[1];
+  const ss = tag.match(/\bsrcset=["']([^"']+)["']/i);
+  if (ss) {
+    const cands = ss[1]
+      .split(",")
+      .map((s) => s.trim().split(/\s+/)[0])
+      .filter(Boolean);
+    if (cands.length) return cands[cands.length - 1];
+  }
+  return null;
+}
+
+/** 把 raw src 轉成絕對 URL，過濾掉 svg / 介面雜訊圖；不合格回 null */
+function toContentImageUrl(rawSrc: string, base: URL): string | null {
+  let abs: string;
+  try {
+    abs = new URL(rawSrc, base).toString();
+  } catch {
+    return null;
+  }
+  if (!/^https?:/i.test(abs)) return null;
+  if (/\.svg(\?|$)/i.test(abs)) return null;
+  if (IMG_PATH_NOISE.test(new URL(abs).pathname)) return null;
+  if (IMG_NOISE.test(abs)) return null;
+  return abs;
+}
+
+/** 從清理後的 article 區塊收集內文圖片（絕對 URL、去重、過濾雜訊） */
+function extractBodyImages(cleanedRegion: string, base: URL, max = 10): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const tags = cleanedRegion.match(/<img\b[^>]*>/gi) || [];
+  for (const tag of tags) {
+    const src = pickImgSrc(tag);
+    if (!src) continue;
+    const abs = toContentImageUrl(src, base);
+    if (!abs || seen.has(abs)) continue;
+    seen.add(abs);
+    out.push(abs);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+/**
+ * 把清理後的 article 區塊轉成 markdown 文字，內文圖片就地保留成 ![alt](url)。
+ * 先把 <img> 換成 markdown 圖片語法，再把 block tag 換行、剝掉其餘 tag。
+ */
+function regionToMarkdown(cleanedRegion: string, base: URL, maxChars: number): string {
+  const withImages = cleanedRegion.replace(/<img\b[^>]*>/gi, (tag) => {
+    const src = pickImgSrc(tag);
+    if (!src) return "";
+    const abs = toContentImageUrl(src, base);
+    if (!abs) return "";
+    const alt = (tag.match(/\balt=["']([^"']*)["']/i)?.[1] || "").trim();
+    return `\n\n![${alt}](${abs})\n\n`;
+  });
+
+  const text = withImages
     .replace(/<\/(p|div|h[1-6]|li|br)>/gi, "\n")
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<[^>]+>/g, "")
@@ -282,11 +369,19 @@ export async function crawlUrl(rawUrl: string): Promise<CrawlResult> {
   const finalUrlObj = new URL(res.url);
   const title = extractTitle(html) ?? "";
   const description = extractDescription(html);
-  const imageUrl = extractImage(html, finalUrlObj);
   const publishedAt = extractPublishedAt(html);
   const detectedLang = extractLang(html);
   const siteName = extractSiteName(html);
-  const bodyText = stripHtmlToText(html, 8000);
+
+  // 內文：選 article 區塊 → 清雜訊 → 收集內文圖片 + 轉 markdown（保留內嵌圖片）
+  const region = selectArticleRegion(html);
+  const cleaned = cleanRegion(region);
+  const bodyImages = extractBodyImages(cleaned, finalUrlObj);
+  const bodyText = regionToMarkdown(cleaned, finalUrlObj, 8000);
+
+  // 主圖：og:image / twitter:image 優先；沒有就用內文第一張圖（修 lmaga 這種無 og:image 的站）
+  let imageUrl = extractImage(html, finalUrlObj);
+  if (!imageUrl && bodyImages.length > 0) imageUrl = bodyImages[0];
 
   return {
     url: validated.toString(),
@@ -298,6 +393,7 @@ export async function crawlUrl(rawUrl: string): Promise<CrawlResult> {
     publishedAt,
     detectedLang,
     bodyText,
+    bodyImages,
     siteName,
   };
 }

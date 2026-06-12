@@ -167,7 +167,9 @@ export async function POST(req: Request) {
         descriptionLength: crawl.description.length,
         bodyTextLength: crawl.bodyText.length,
         bodyTextSample: crawl.bodyText.slice(0, 500),
-        hasImage: !!crawl.imageUrl,
+        heroImage: crawl.imageUrl,
+        bodyImageCount: crawl.bodyImages.length,
+        bodyImages: crawl.bodyImages.slice(0, 8),
       };
     } catch (err) {
       result.crawl = {
