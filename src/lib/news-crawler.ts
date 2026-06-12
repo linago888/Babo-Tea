@@ -67,33 +67,34 @@ export function validateUrl(raw: string): URL | { error: string } {
   return url;
 }
 
-/** 抽 <meta property="og:xxx"> 或 <meta name="xxx"> 或 <meta itemprop="xxx"> */
+/**
+ * 從單一 HTML tag 抽出某屬性的值，相容三種寫法：
+ *   attr="v"  /  attr='v'  /  attr=v （無引號，值到空白或 > 為止）
+ * 例：Gannett / USA Today 系統會輸出 <meta property=og:image content="...">
+ *     （property 的值沒有引號），舊版寫死引號的 regex 完全抓不到。
+ */
+function attrValue(tag: string, attr: string): string | null {
+  const m = tag.match(
+    new RegExp(`\\b${escapeRegex(attr)}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s"'>]+))`, "i"),
+  );
+  if (!m) return null;
+  return m[2] ?? m[3] ?? m[4] ?? null;
+}
+
+/**
+ * 抽 <meta property="og:xxx"> / <meta name="xxx"> / <meta itemprop="xxx"> 的 content。
+ * 逐一掃過所有 <meta> tag，用 attrValue 解析 — 屬性順序、引號有無都不影響。
+ */
 function extractMeta(html: string, key: string): string | null {
-  const patterns = [
-    new RegExp(
-      `<meta\\s+[^>]*property=["']${escapeRegex(key)}["'][^>]*content=["']([^"']+)["']`,
-      "i",
-    ),
-    new RegExp(
-      `<meta\\s+[^>]*content=["']([^"']+)["'][^>]*property=["']${escapeRegex(key)}["']`,
-      "i",
-    ),
-    new RegExp(
-      `<meta\\s+[^>]*name=["']${escapeRegex(key)}["'][^>]*content=["']([^"']+)["']`,
-      "i",
-    ),
-    new RegExp(
-      `<meta\\s+[^>]*content=["']([^"']+)["'][^>]*name=["']${escapeRegex(key)}["']`,
-      "i",
-    ),
-    new RegExp(
-      `<meta\\s+[^>]*itemprop=["']${escapeRegex(key)}["'][^>]*content=["']([^"']+)["']`,
-      "i",
-    ),
-  ];
-  for (const p of patterns) {
-    const m = html.match(p);
-    if (m) return decodeHtmlEntities(m[1]);
+  const tags = html.match(/<meta\b[^>]*>/gi) || [];
+  const lowerKey = key.toLowerCase();
+  for (const tag of tags) {
+    const prop =
+      attrValue(tag, "property") ?? attrValue(tag, "name") ?? attrValue(tag, "itemprop");
+    if (prop && prop.toLowerCase() === lowerKey) {
+      const content = attrValue(tag, "content");
+      if (content) return decodeHtmlEntities(content);
+    }
   }
   return null;
 }
@@ -233,14 +234,14 @@ const IMG_PATH_NOISE = /\/(themes?|assets?|common|static|plugins?|skin|_next|spr
  */
 function pickImgSrc(tag: string): string | null {
   for (const attr of ["data-src", "data-original", "data-lazy-src", "data-lazy", "data-echo", "data-img"]) {
-    const m = tag.match(new RegExp(`\\b${attr}=["']([^"']+)["']`, "i"));
-    if (m && !/^data:/i.test(m[1])) return m[1];
+    const v = attrValue(tag, attr);
+    if (v && !/^data:/i.test(v)) return v;
   }
-  const src = tag.match(/\bsrc=["']([^"']+)["']/i);
-  if (src && !/^data:/i.test(src[1])) return src[1];
-  const ss = tag.match(/\bsrcset=["']([^"']+)["']/i);
+  const src = attrValue(tag, "src");
+  if (src && !/^data:/i.test(src)) return src;
+  const ss = attrValue(tag, "srcset");
   if (ss) {
-    const cands = ss[1]
+    const cands = ss
       .split(",")
       .map((s) => s.trim().split(/\s+/)[0])
       .filter(Boolean);
