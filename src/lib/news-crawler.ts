@@ -329,6 +329,30 @@ export async function crawlUrl(rawUrl: string): Promise<CrawlResult> {
       redirect: "follow",
       signal: controller.signal,
     });
+
+    // 有些站擋我們的 bot UA（回 403/401/429）但放行瀏覽器 — 用瀏覽器 headers 重試一次。
+    // 反過來也有站（如 Gannett）只放行 bot UA、擋瀏覽器，所以「bot 先、瀏覽器補」順序最穩。
+    if (res.status === 403 || res.status === 401 || res.status === 429) {
+      try { await res.body?.cancel(); } catch { /* noop */ }
+      res = await fetch(validated.toString(), {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9,zh;q=0.8,ja;q=0.7",
+          "Sec-Ch-Ua": '"Chromium";v="120", "Not=A?Brand";v="8"',
+          "Sec-Ch-Ua-Mobile": "?0",
+          "Sec-Ch-Ua-Platform": '"Windows"',
+          "Sec-Fetch-Dest": "document",
+          "Sec-Fetch-Mode": "navigate",
+          "Sec-Fetch-Site": "none",
+          "Upgrade-Insecure-Requests": "1",
+        },
+        redirect: "follow",
+        signal: controller.signal,
+      });
+    }
   } catch (err) {
     clearTimeout(timeout);
     if (err instanceof Error && err.name === "AbortError") {
@@ -339,6 +363,11 @@ export async function crawlUrl(rawUrl: string): Promise<CrawlResult> {
   clearTimeout(timeout);
 
   if (!res.ok) {
+    if (res.status === 403 || res.status === 401 || res.status === 429) {
+      throw new Error(
+        `Site blocked the crawler (HTTP ${res.status}) — bot protection (e.g. Cloudflare). Content must be filled in manually.`,
+      );
+    }
     throw new Error(`Source returned HTTP ${res.status}`);
   }
 

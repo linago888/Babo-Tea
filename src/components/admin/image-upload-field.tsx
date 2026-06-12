@@ -119,6 +119,7 @@ export default function ImageUploadField({
           <img
             src={value}
             alt="preview"
+            referrerPolicy="no-referrer"
             className="max-h-[200px] max-w-full rounded object-contain"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = "none";

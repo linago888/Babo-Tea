@@ -193,6 +193,7 @@ export default function NewsCrawlPanel({ onApply }: Props) {
               <img
                 src={crawl.imageUrl}
                 alt="hero preview"
+                referrerPolicy="no-referrer"
                 className="size-20 shrink-0 rounded object-cover"
                 onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
               />

@@ -273,6 +273,7 @@ async function renderInbox(searchParamsPromise: Promise<SearchParams>) {
                   <img
                     src={n.heroImageUrl}
                     alt=""
+                    referrerPolicy="no-referrer"
                     className="h-24 w-24 shrink-0 rounded-md object-cover sm:h-28 sm:w-40"
                   />
                 ) : (
